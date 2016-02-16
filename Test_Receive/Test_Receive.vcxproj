@@ -202,6 +202,9 @@
     <ProjectReference Include="..\..\ofxKinectForWindows2\ofxKinectForWindows2Lib\ofxKinectForWindows2Lib.vcxproj">
       <Project>{f6008d6a-6d39-4b68-840e-e7ac8ed855da}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\ofxSpout\ofxSpoutLib\ofxSpout.vcxproj">
+      <Project>{c087079e-2a0e-4b85-a479-c28e2d01a048}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\ofxSquashBuddies\ofxSquashBuddiesLib\ofxSquashBuddies.vcxproj">
       <Project>{1ac26b68-becb-44e7-89f4-210ae5e4c06c}</Project>
     </ProjectReference>

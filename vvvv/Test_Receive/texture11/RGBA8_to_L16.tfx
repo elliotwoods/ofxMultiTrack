@@ -1,0 +1,51 @@
+//@author: elliotwoods
+//@help: Uncompress L16 which is stored in an RGBA8
+//@tags: texture
+//@credits: 
+
+Texture2D<float4> texture2d : PREVIOUS;
+float2 TargetSize : TARGETSIZE;
+
+float3x3 YUV2RGB = float3x3(1,	1,	1,
+				0,	-.34413, 1.772,
+				1.402,	-.71414,	0);
+
+SamplerState linearSampler : IMMUTABLE
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
+
+struct psInput
+{
+	float4 p : SV_Position;
+	float2 uv : TEXCOORD0;
+};
+
+
+float4 PS(psInput input) : SV_Target
+{
+	uint2 x = TargetSize * input.uv;
+	bool isLeft = x.x % 2 == 0;
+	x.x /= 2;
+	
+	float4 RGBA8 = texture2d[x];
+	
+	float LSB = isLeft ? RGBA8.r : RGBA8.b;
+	float HSB = isLeft ? RGBA8.g : RGBA8.a;
+	
+	return (HSB + LSB / pow(2, 8));
+}
+
+technique10 Process
+{
+	pass P0
+	<float2 scale= float2(2.0, 1.0); string format="R16_UNorm";>
+	{
+		SetPixelShader(CompileShader(ps_4_0,PS()));
+	}
+}
+
+
+

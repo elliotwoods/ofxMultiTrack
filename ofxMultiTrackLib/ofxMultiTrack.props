@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="..\..\ofxSquashBuddies\ofxSquashBuddiesLib\ofxSquashBuddies.props" />
     <Import Project="..\..\ofxKinectForWindows2\ofxKinectForWindows2.props" />
+    <Import Project="..\..\ofxSpout\ofxSpoutLib\ofxSpout.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />

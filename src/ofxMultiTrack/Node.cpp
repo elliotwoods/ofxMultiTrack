@@ -68,7 +68,28 @@ namespace ofxMultiTrack {
 		this->kinect.update();
 		if (this->kinect.isFrameNew()) {
 			if (this->sender.getCurrentSocketBufferSize() < 100) {
-				this->kinect.getColorSource()->getYuvPixels().resizeTo(this->frame.color, ofInterpolationMethod::OF_INTERPOLATE_NEAREST_NEIGHBOR);
+
+				//color pixels
+				{
+					auto & kinectColor = this->kinect.getColorSource()->getYuvPixels();
+					if (kinectColor.isAllocated()) {
+						for (int j = 0; j < 720; j++) {
+							auto input = kinectColor.getData() + 1920 * 2 * (j * 3 / 2);
+							auto output = this->frame.color.getData() + 1280 * 2 * j;
+							for (int i = 0; i < 1280; i++) {
+								*output++ = *input++;
+								*output++ = *input++;
+
+								*output++ = *input++;
+								*output++ = *input++;
+
+								input++;
+								input++;
+							}
+						}
+					}
+				}
+				
 				this->frame.depth = this->kinect.getDepthSource()->getPixels();
 				//this->frame.infrared = this->kinect.getInfraredSource()->getPixels();
 				this->frame.bodyIndex = this->kinect.getBodyIndexSource()->getPixels();

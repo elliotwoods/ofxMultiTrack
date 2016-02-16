@@ -6,7 +6,7 @@
 namespace ofxMultiTrack {
 	class NodeConnection {
 	public:
-		void init(int port);
+		bool init(int port);
 		void update();
 
 		bool isFrameNew() const;

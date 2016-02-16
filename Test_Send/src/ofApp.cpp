@@ -27,9 +27,17 @@ void ofApp::setup() {
 		auto port = 4444;
 		string ipAddress = "127.0.0.1";
 		
-		auto result = ofSystemTextBoxDialog("Select remote IP (Default is " + ipAddress + ")");
-		if (!result.empty()) {
-			ipAddress = result;
+		{
+			auto result = ofSystemTextBoxDialog("Select remote IP (Default is " + ipAddress + ")");
+			if (!result.empty()) {
+				ipAddress = result;
+			}
+		}
+		{
+			auto result = ofSystemTextBoxDialog("Select remote port (Default is " + ofToString(port) + ")");
+			if (!result.empty()) {
+				port = ofToInt(result);
+			}
 		}
 
 		this->node.init(ipAddress, port);

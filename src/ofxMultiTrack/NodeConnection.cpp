@@ -4,14 +4,18 @@ using namespace ofxSquashBuddies;
 
 namespace ofxMultiTrack {
 	//---------
-	void NodeConnection::init(int port) {
-		this->receiver.init(port);
+	bool NodeConnection::init(int port) {
+		if (!this->receiver.init(port)) {
+			return false;
+		}
 
 		this->frame.color.allocate(1280, 720, OF_PIXELS_YUY2);
 		this->frame.depth.allocate(512, 424, OF_PIXELS_GRAY);
 		this->frame.infrared.allocate(512, 424, OF_PIXELS_GRAY);
 		this->frame.bodyIndex.allocate(512, 424, OF_PIXELS_GRAY);
 		this->frame.colorCoordInDepthFrame.allocate(512, 424, OF_PIXELS_RG);
+
+		return true;
 	}
 
 	//---------
@@ -19,6 +23,17 @@ namespace ofxMultiTrack {
 		this->newFrame = false;
 
 		this->receiver.update();
+
+		//wait up to 1/20th of a sec for a new frame
+		auto startTime = chrono::high_resolution_clock::now();
+		auto timeout = chrono::milliseconds(1000) / 20;
+		while (!this->receiver.isFrameNew()) {
+			if (chrono::high_resolution_clock::now() - startTime > timeout) {
+				break;
+			}
+			this->receiver.update();
+		}
+
 		if (this->receiver.isFrameNew()) {
 			const auto & message = this->receiver.getMessage();
 			this->incomingFrameTimes.push(chrono::high_resolution_clock::now());

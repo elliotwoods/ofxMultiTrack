@@ -4,6 +4,7 @@
 
 #include "ofxMultiTrack.h"
 #include "ofxCvGui.h"
+#include "ofxSpout.h"
 
 class ofApp : public ofBaseApp{
 
@@ -28,9 +29,19 @@ class ofApp : public ofBaseApp{
 
 		ofxMultiTrack::NodeConnection receiver;
 
-		ofTexture previewColor;
-		ofTexture previewDepth;
-		ofTexture previewInfrared;
-		ofTexture previewBodyIndex;
-		ofTexture previewColorCoordInDepthFrame;
+		struct Texture {
+			ofTexture texture;
+			ofxSpout::Sender sender;
+
+			void send() {
+				this->sender.send(this->texture);
+			}
+		};
+		Texture color;
+		Texture depth;
+		Texture infrared;
+		Texture bodyIndex;
+		Texture colorCoordInDepthFrame;
+
+		int clientIndex = 0;
 };
