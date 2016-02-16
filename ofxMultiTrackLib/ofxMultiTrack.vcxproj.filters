@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{7754de8e-7041-4c97-a227-091110a279b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ofxMultiTrack">
+      <UniqueIdentifier>{f77aa92d-2258-4333-8101-91625627b668}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\ofxMultiTrack.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxMultiTrack\Node.h">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxMultiTrack\Frame.h">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxMultiTrack\NodeConnection.h">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\ofxMultiTrack\Node.cpp">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxMultiTrack\NodeConnection.cpp">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
