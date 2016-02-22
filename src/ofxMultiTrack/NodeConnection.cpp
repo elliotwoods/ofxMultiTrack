@@ -19,6 +19,20 @@ namespace ofxMultiTrack {
 	}
 
 	//---------
+	template<typename DataType>
+	const DataType & readAndMove(uint8_t * & in) {
+		auto & inTyped = ((DataType * &)in);
+		return *inTyped++;
+	}
+
+	//---------
+	template<typename DataType>
+	void readAndMove(uint8_t * & in, DataType & out) {
+		auto & inTyped = ((DataType * &)in);
+		out = *inTyped++;
+	}
+
+	//---------
 	void NodeConnection::update() {
 		this->newFrame = false;
 
@@ -36,7 +50,6 @@ namespace ofxMultiTrack {
 
 		if (this->receiver.isFrameNew()) {
 			const auto & message = this->receiver.getMessage();
-			this->incomingFrameTimes.push(chrono::high_resolution_clock::now());
 
 			if (message.hasHeader<Header::MultiTrack_2_2_Frame>()) {
 				this->newFrame = true;
@@ -45,14 +58,11 @@ namespace ofxMultiTrack {
 				auto bodySize = (size_t)Header::MultiTrack_2_2_Frame::Constants::TotalDataSize;
 
 				//header
-				{
-					auto & header = message.getHeader<Header::MultiTrack_2_2_Frame>();
-				}
+				auto & header = message.getHeader<Header::MultiTrack_2_2_Frame>();
 
 				//body
+				auto body = (uint8_t*)message.getBodyData();
 				{
-					auto body = (uint8_t*)message.getBodyData();
-
 					auto & color = this->frame.color;
 					memcpy(color.getData(), body, Header::MultiTrack_2_2_Frame::Constants::ColorSize);
 					body += Header::MultiTrack_2_2_Frame::Constants::ColorSize;
@@ -72,19 +82,36 @@ namespace ofxMultiTrack {
 					auto & colorCoordInDepthFrame = this->frame.colorCoordInDepthFrame;
 					memcpy(colorCoordInDepthFrame.getData(), body, Header::MultiTrack_2_2_Frame::Constants::ColorCoordInDepthViewSize);
 					body += Header::MultiTrack_2_2_Frame::Constants::ColorCoordInDepthViewSize;
+
+					{
+						auto data = body;
+						auto skeletonCount = readAndMove<uint8_t>(data);
+
+						vector<ofxKinectForWindows2::Data::Body> bodies(skeletonCount);
+						for (int i = 0; i < skeletonCount; i++) {
+							auto & body = bodies[i];
+							auto & joints = body.joints;
+
+							readAndMove(data, (uint8_t&) body.tracked);
+							readAndMove(data, (uint8_t&) body.bodyId);
+							readAndMove(data, (uint64_t&) body.trackingId);
+							readAndMove(data, (uint8_t&) body.leftHandState);
+							readAndMove(data, (uint8_t&) body.rightHandState);
+							auto jointsCount = readAndMove<uint8_t>(data);
+
+							for (int i = 0; i < jointsCount; i++) {
+								auto joint = readAndMove<_Joint>(data);
+								auto jointOrientation = readAndMove<_JointOrientation>(data);
+								joints.emplace(make_pair(joint.JointType, ofxKinectForWindows2::Data::Joint(joint, jointOrientation)));
+							}
+
+							bodies.push_back(body);
+						}
+						this->frame.bodies = bodies;
+					}
+					
 				}
 			}
-		}
-
-		//calculate fps
-		if (!incomingFrameTimes.empty()) {
-			auto now = chrono::high_resolution_clock::now();
-			auto old = incomingFrameTimes.front();
-			auto size = incomingFrameTimes.size();
-			while (incomingFrameTimes.size() > 30) {
-				incomingFrameTimes.pop();
-			}
-			this->frameRate = (double) (size - 1) * 1e6 / (double)chrono::duration_cast<chrono::microseconds>(now - old).count();
 		}
 	}
 
@@ -96,11 +123,6 @@ namespace ofxMultiTrack {
 	//---------
 	const Frame & NodeConnection::getFrame() const {
 		return this->frame;
-	}
-
-	//---------
-	double NodeConnection::getFrameRate() const {
-		return this->frameRate;
 	}
 
 	//---------

@@ -5,6 +5,7 @@
 #include "ofxMultiTrack.h"
 #include "ofxCvGui.h"
 #include "ofxSpout.h"
+#include "ofxOsc.h"
 
 class ofApp : public ofBaseApp{
 
@@ -27,7 +28,7 @@ class ofApp : public ofBaseApp{
 		
 		ofxCvGui::Builder gui;
 
-		ofxMultiTrack::NodeConnection receiver;
+		ofxMultiTrack::NodeConnection nodeConnection;
 
 		struct Texture {
 			ofTexture texture;
@@ -44,4 +45,9 @@ class ofApp : public ofBaseApp{
 		Texture colorCoordInDepthFrame;
 
 		int clientIndex = 0;
+		bool newFrame = false;
+		
+		ofxOscSender oscSender;
+		int oscPort;
+		string oscHost = "127.0.0.1";
 };

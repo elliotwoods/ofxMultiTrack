@@ -12,8 +12,11 @@ namespace ofxMultiTrack {
 		bool update(); // return false if dropped a frame
 
 		ofxKinectForWindows2::Device & getKinect();
+		ofxSquashBuddies::Sender & getSender();
 
 		void setTexturesEnabled(bool);
+
+		float getDeviceFrameRate() const;
 	protected:
 		ofxKinectForWindows2::Device kinect;
 
@@ -25,5 +28,6 @@ namespace ofxMultiTrack {
 		uint8_t * bodiesData;
 
 		ofTexture yuyPreview;
+		ofxSquashBuddies::Utils::FramerateCounter kinectFrameRateCounter;
 	};
 }

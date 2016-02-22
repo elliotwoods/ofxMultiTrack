@@ -3,6 +3,8 @@
 #include "Frame.h"
 #include "ofxSquashBuddies/Receiver.h"
 
+#include "ofxKinectForWindows2.h"
+
 namespace ofxMultiTrack {
 	class NodeConnection {
 	public:
@@ -11,7 +13,6 @@ namespace ofxMultiTrack {
 
 		bool isFrameNew() const;
 		const Frame & getFrame() const;
-		double getFrameRate() const;
 
 		ofxSquashBuddies::Receiver & getReceiver();
 	protected:
@@ -19,8 +20,5 @@ namespace ofxMultiTrack {
 
 		ofxSquashBuddies::Receiver receiver;
 		bool newFrame = false;
-
-		queue<chrono::high_resolution_clock::time_point> incomingFrameTimes;
-		float frameRate = 0.0f;
 	};
 }

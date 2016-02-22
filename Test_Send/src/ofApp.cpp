@@ -12,8 +12,31 @@ void ofApp::setup() {
 	auto widgets = this->gui.addWidgets();
 	widgets->addTitle("MultiTrack Send");
 	widgets->addFps();
+	widgets->addLiveValueHistory("Kinect device framerate", [this]() {
+		return this->node.getDeviceFrameRate();
+	});
+	widgets->addLiveValueHistory("Sending framerate", [this]() {
+		return this->node.getSender().getSendFramerate();
+	});
 	widgets->addLiveValueHistory("Dropped frame", [this]() {
 		return (float) this->droppedFrame;
+	});
+	widgets->addEditableValue<int>("Packet size", [this]() {
+		return (int) this->node.getSender().getPacketSize();
+	}, [this](string newSizeString) {
+		if (!newSizeString.empty()) {
+			this->node.getSender().setPacketSize(ofToInt(newSizeString));
+		}
+	});
+	widgets->addLiveValue<size_t>("Current socket buffer size", [this]() {
+		return this->node.getSender().getCurrentSocketBufferSize();
+	});
+	widgets->addEditableValue<int>("Max socket buffer size", [this]() {
+		return (int) this->node.getSender().getMaxSocketBufferSize();
+	}, [this](string newSizeString) {
+		if (!newSizeString.empty()) {
+			this->node.getSender().setMaxSocketBufferSize(ofToInt(newSizeString));
+		}
 	});
 	widgets->addToggle("Minimise GUI",
 		[this]() {
@@ -68,7 +91,7 @@ void ofApp::setGuiMinimised(bool minimised) {
 	if (minimised) {
 		this->node.setTexturesEnabled(false);
 		this->guiController->setRootGroup(this->smallGui);
-		ofSetWindowShape(300, 300);
+		ofSetWindowShape(300, 500);
 	}
 	else {
 		this->node.setTexturesEnabled(true);
