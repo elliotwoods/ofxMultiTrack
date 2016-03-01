@@ -1,3 +1,0 @@
-ofxAsio
-ofxSquash
-ofxSquashBuddies

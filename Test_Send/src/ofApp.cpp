@@ -47,21 +47,64 @@ void ofApp::setup() {
 
 	//initialize sender
 	{
-		auto port = 4444;
+		bool autoStart = false;
 		string ipAddress = "127.0.0.1";
+		auto port = 4444;
+
+		string settingsFileName = "settings.txt";
+		{
+			auto settingsFile = ifstream(ofToDataPath(settingsFileName).c_str(), ios::in);
+			int lineNumber = 0;
+			string line;
+			while(getline(settingsFile, line)) {
+				//check if it's not just white space
+				if (line.find_first_not_of("\t\n\r ") != string::npos) {
+					switch (lineNumber) {
+					case 0:
+						ipAddress = line;
+						break;
+					case 1:
+						port = ofToInt(line);
+						break;
+					case 2:
+						if (line.size() > 0) {
+							autoStart = true;
+						}
+						break;
+					default:
+						break;
+					}
+				}
+				lineNumber++;
+			}
+		}
 		
-		{
-			auto result = ofSystemTextBoxDialog("Select remote IP (Default is " + ipAddress + ")");
-			if (!result.empty()) {
-				ipAddress = result;
+		if (!autoStart) {
+			bool userMadeChange = false;
+
+			{
+				auto result = ofSystemTextBoxDialog("Select remote IP (Default is " + ipAddress + ")");
+				if (!result.empty()) {
+					ipAddress = result;
+					userMadeChange = true;
+				}
+			}
+			{
+				auto result = ofSystemTextBoxDialog("Select remote port (Default is " + ofToString(port) + ")");
+				if (!result.empty()) {
+					port = ofToInt(result);
+					userMadeChange = true;
+				}
+			}
+
+			if (userMadeChange) {
+				auto settingsFile = ofstream(ofToDataPath(settingsFileName).c_str(), ios::out | ios::trunc);
+				settingsFile << ipAddress << endl;
+				settingsFile << port << endl;
+				settingsFile.close();
 			}
 		}
-		{
-			auto result = ofSystemTextBoxDialog("Select remote port (Default is " + ofToString(port) + ")");
-			if (!result.empty()) {
-				port = ofToInt(result);
-			}
-		}
+		
 
 		this->node.init(ipAddress, port);
 		ofSetWindowTitle("Sending to : " + ipAddress + ":" + ofToString(port));
@@ -73,8 +116,8 @@ void ofApp::setup() {
 				auto panel = ofxCvGui::Panels::make(imageSource->getTexture(), source->getTypeName());
 				this->gui.add(panel);
 			}
-			
 		}
+		this->gui.add(ofxCvGui::Panels::make(this->node.colorPreview, "RGB decoded"));
 	}
 
 	this->smallGui = ofxCvGui::Panels::Groups::makeGrid();

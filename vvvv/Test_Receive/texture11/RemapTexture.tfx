@@ -3,7 +3,9 @@
 //@tags: texture
 //@credits: 
 
-Texture2D<float4> texture2d : PREVIOUS;
+Texture2D<float2> colorCoordInDepthView : PREVIOUS;
+Texture2D<float4> Image;
+
 float2 TargetSize : TARGETSIZE;
 
 SamplerState linearSampler : IMMUTABLE
@@ -22,22 +24,18 @@ struct psInput
 
 float4 PS(psInput input) : SV_Target
 {
-	uint2 x = input.p.xy;
-	bool isLeft = x.x % 2 == 0;
-	x.x /= 2;
-	
-	float4 RGBA8 = texture2d[x];
-	
-	float LSB = isLeft ? RGBA8.r : RGBA8.b;
-	float HSB = isLeft ? RGBA8.g : RGBA8.a;
-	
-	return (HSB + LSB / pow(2, 8));
+	uint2 colorCoord = colorCoordInDepthView.Load(int3(input.p.xy, 0)) * float((1 << 16) - 1);
+	if(all(colorCoord.x == uint2(0,0))) {
+		return 0;
+	} else {
+		return Image.Load(int3(colorCoord, 0));
+	}
 }
 
 technique10 Process
 {
 	pass P0
-	<float2 scale= float2(2.0, 1.0); string format="R16_UNorm";>
+	<string format="R8G8B8A8_UNorm";>
 	{
 		SetPixelShader(CompileShader(ps_4_0,PS()));
 	}

@@ -26,12 +26,12 @@ struct psInput
 
 float4 PS(psInput input) : SV_Target
 {
-	uint2 x = TargetSize * input.uv;
+	uint2 x = input.p.xy;
 	bool isLeft = x.x % 2 == 0;
 	x.x /= 2;
 	float4 YUY2 = texture2d[x];
 	
-	float y = isLeft ? YUY2.z : YUY2.x;
+	float y = isLeft ? YUY2.x : YUY2.z;
 	float u = YUY2.y; // cb
 	float v = YUY2.w; // cr
 	
@@ -40,7 +40,7 @@ float4 PS(psInput input) : SV_Target
 	float g =  y - 0.344 * (u - 0.5f) - 0.714 * (v - 0.5f);
     float b =  y + 1.772 * (u - 0.5f);
 	
-	return y;//float4(r, g, b, 1.0f);
+	return float4(r, g, b, 1.0f);
 }
 
 technique10 Process

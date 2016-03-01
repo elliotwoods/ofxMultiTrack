@@ -22,11 +22,7 @@ struct psInput
 
 float2 PS(psInput input) : SV_Target
 {
-	uint2 x = TargetSize * input.uv;
-	bool isLeft = x.x % 2 == 0;
-	x.x /= 2;
-	
-	float4 RGBA8 = texture2d[x];
+	float4 RGBA8 = texture2d.Load(int3(input.p.xy, 0));
 		
 	float2 result;
 	result.r = (RGBA8.g + RGBA8.r / pow(2, 8));

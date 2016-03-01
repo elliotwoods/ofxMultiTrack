@@ -4,63 +4,77 @@ using namespace ofxSquashBuddies;
 
 namespace ofxMultiTrack {
 	//----------
-	void Node::init(string ipAddress, int port, bool useTexture) {
-		//setup the sender
+	void Node::init(string ipAddress, int port) {
+		this->sender.init(ipAddress, port);
+
+		this->streams.color.enabled = true;
+		this->streams.depth.enabled = true;
+		this->streams.infrared.enabled = false;
+		this->streams.bodyIndex.enabled = true;
+		this->streams.colorCoordInDepthView.enabled = true;
+		this->streams.bodies.enabled = true;
+
+		this->setupKinect();
+
+		//declare the streams
 		{
-			this->sender.init(ipAddress, port);
+			{
+				auto & stream = this->streams.color;
+				stream.frameSettings = {
+					1920,
+					720,
+					Header::MultiTrack_2_3_Frame::PixelFormat::YUY2_8
+				};
+				stream.source = this->kinect.getColorSource();
+			}
+			{
+				auto & stream = this->streams.depth;
+				stream.frameSettings = {
+					512,
+					424,
+					Header::MultiTrack_2_3_Frame::PixelFormat::L_16
+				};
+				stream.source = this->kinect.getDepthSource();
+			}
+			{
+				auto & stream = this->streams.infrared;
+				stream.frameSettings = {
+					512,
+					424,
+					Header::MultiTrack_2_3_Frame::PixelFormat::L_16
+				};
+				stream.source = this->kinect.getInfraredSource();
+			}
+			{
+				auto & stream = this->streams.bodyIndex;
+				stream.frameSettings = {
+					512,
+					424,
+					Header::MultiTrack_2_3_Frame::PixelFormat::L_8
+				};
+				stream.source = this->kinect.getBodyIndexSource();
+			}
+			{
+				auto & stream = this->streams.colorCoordInDepthView;
+				stream.frameSettings = {
+					512,
+					424,
+					Header::MultiTrack_2_3_Frame::PixelFormat::RG_16
+				};
+				stream.source = this->kinect.getDepthSource();
+			}
+			{
+				auto & stream = this->streams.bodies;
+				stream.frameSettings = {
+					512,
+					424,
+					Header::MultiTrack_2_3_Frame::PixelFormat::L_8
+				};
+				stream.source = this->kinect.getBodySource();
+			}
 		}
 
-		//setup the kinect
-		{
-			this->kinect.open();
-			
-			auto colorSource = this->kinect.initColorSource();
-			colorSource->setYuvPixelsEnabled(true);
-			colorSource->setUseTexture(useTexture);
-
-			auto depthSource = this->kinect.initDepthSource();
-			depthSource->setUseTexture(useTexture);
-
-			auto bodyIndexSource = this->kinect.initBodyIndexSource();
-			bodyIndexSource->setUseTexture(useTexture);
-
-			auto infraredSource = this->kinect.initInfraredSource();
-			infraredSource->setUseTexture(useTexture);
-
-			this->kinect.initBodySource();
-		}
-
-		//setup the message
-		{
-			auto headerSize = sizeof(Header::MultiTrack_2_2_Frame);
-			auto bodySize = (size_t)Header::MultiTrack_2_2_Frame::Constants::TotalDataSize;
-			this->message.resizeHeaderAndBody(headerSize + bodySize);
-
-			//initialise the header
-			auto & header = this->message.getHeader<Header::MultiTrack_2_2_Frame>(true);
-		}
-
-		//wrap the message in pixel objects
-		//this means that the memory is allocated in Message but can be accessed from each pixels
-		{
-			auto messageBodyPosition = (uint8_t*)this->message.getBodyData();
-			this->frame.color.setFromExternalPixels(messageBodyPosition, 1280, 720, OF_PIXELS_YUY2);
-			messageBodyPosition += Header::MultiTrack_2_2_Frame::Constants::ColorSize;
-
-			this->frame.depth.setFromExternalPixels((uint16_t*)messageBodyPosition, 512, 424, OF_PIXELS_GRAY);
-			messageBodyPosition += Header::MultiTrack_2_2_Frame::Constants::DepthSize;
-
-			this->frame.infrared.setFromExternalPixels((uint16_t*)messageBodyPosition, 512, 424, OF_PIXELS_GRAY);
-			messageBodyPosition += Header::MultiTrack_2_2_Frame::Constants::InfraredSize;
-
-			this->frame.bodyIndex.setFromExternalPixels(messageBodyPosition, 512, 424, OF_PIXELS_GRAY);
-			messageBodyPosition += Header::MultiTrack_2_2_Frame::Constants::BodyIndexSize;
-
-			this->frame.colorCoordInDepthFrame.setFromExternalPixels((uint16_t*)messageBodyPosition, 512, 424, OF_PIXELS_RG);
-			messageBodyPosition += Header::MultiTrack_2_2_Frame::Constants::ColorCoordInDepthViewSize;
-
-			this->bodiesData = messageBodyPosition;
-		}
+		this->setupMessage();
 	}
 
 	//---------
@@ -71,57 +85,122 @@ namespace ofxMultiTrack {
 	}
 
 	//----------
+	template<typename PixelType>
+	void updateStream(ofPixels_<PixelType> & pixels, const Node::Stream & stream) {
+		if (stream.enabled) {
+			auto source = dynamic_pointer_cast<ofBaseHasPixels_<PixelType>>(stream.source);
+			pixels = source->getPixels();
+		}
+	}
+
+	//----------
 	bool Node::update() {
 		this->kinectFrameRateCounter.update(); 
 		
 		this->kinect.update();
 		if (this->kinect.isFrameNew()) {
 			this->kinectFrameRateCounter.addFrame();
-			//color pixels
-			{
-				auto & kinectColor = this->kinect.getColorSource()->getYuvPixels();
-				if (kinectColor.isAllocated()) {
-					for (int j = 0; j < 720; j++) {
-						auto input = kinectColor.getData() + 1920 * 2 * (j * 3 / 2);
-						auto output = this->frame.color.getData() + 1280 * 2 * j;
-						for (int i = 0; i < 1280; i++) {
-							*output++ = *input++;
-							*output++ = *input++;
 
-							*output++ = *input++;
-							*output++ = *input++;
+			
+			//color
+			if (this->streams.color.enabled) {
+				auto & inputPixels = this->kinect.getColorSource()->getYuvPixels();
+				if (inputPixels.isAllocated()) {
+					const auto inputWidth = inputPixels.getWidth();
+					const auto inputHeight = inputPixels.getHeight();
+					const auto outputWidth = this->streams.color.frameSettings.width;
+					const auto outputHeight = this->streams.color.frameSettings.height;
 
-							input++;
-							input++;
+					if (outputWidth == inputWidth && outputHeight == inputHeight) {
+						//copy
+						this->frame.color = inputPixels;
+					}
+					else {
+						//resample
+						if (inputWidth == 1920 && outputWidth == 1280 && inputHeight == 1080 && outputHeight == 720) {
+							for (int j = 0; j < 720; j++) {
+								auto input = inputPixels.getData() + 1920 * 2 * (j * 3 / 2);
+								auto output = this->frame.color.getData() + 1280 * 2 * j;
+								for (int i = 0; i < 1920; i += 2) {
+									if (i % 6 < 4) {
+										*output++ = *input++;
+										*output++ = *input++;
+										*output++ = *input++;
+										*output++ = *input++;
+									}
+									else {
+										*input++;
+										*input++;
+										*input++;
+										*input++;
+									}
+								}
+							}
+						}
+						else if (outputWidth == inputWidth) {
+							for (int j = 0; j < outputHeight; j++) {
+								auto outputRow = this->frame.color.getData() + outputWidth * 2 * j;
+								auto inputRow = inputPixels.getData() + inputWidth * 2 * (j * inputHeight / outputHeight);
+								memcpy(outputRow, inputRow, inputWidth * 2);
+							}
+						}
+						else {
+							ofLogError("ofxMultiTrack") << "Color resolution not supported for YUY2 resample";
 						}
 					}
+				
 				}
 			}
-				
-			this->frame.depth = this->kinect.getDepthSource()->getPixels();
-			//this->frame.infrared = this->kinect.getInfraredSource()->getPixels();
-			this->frame.bodyIndex = this->kinect.getBodyIndexSource()->getPixels();
 
-			//get colorInDepth mapping
-			{
-				this->kinect.getDepthSource()->getColorInDepthFrameMapping(this->colorCoordInDepthFrameFloat, 1280, 720);
-				auto coordinateMapper = this->kinect.getDepthSource()->getCoordinateMapper();
+			updateStream(this->frame.depth, this->streams.depth);
+			updateStream(this->frame.infrared, this->streams.infrared);
+			updateStream(this->frame.bodyIndex, this->streams.bodyIndex);
+
+			//colorCoordInDepthView
+			if (this->streams.colorCoordInDepthView.enabled && this->streams.color.enabled) {
+				this->kinect.getDepthSource()->getColorInDepthFrameMapping(this->colorCoordInDepthFrameFloat);
 				auto in = this->colorCoordInDepthFrameFloat.getData();
 				auto out = this->frame.colorCoordInDepthFrame.getData();
-				for (int i = 0; i < 512 * 424 * 2; i++) {
-					out[i] = in[i] * 32.0f;
+				float widthScale = float(this->streams.color.frameSettings.width) / 1920.0f;
+				float heightScale = float(this->streams.color.frameSettings.height) / 1080.0f;
+
+				for (int i = 0; i < 512 * 424 * 2; i+=2) {
+					*out++ = *in++ * widthScale;
+					*out++ = *in++ * heightScale;
 				}
 			}
+
+			//color preview
+			{
+				this->colorPreview.allocate(this->frame.color.getWidth(), this->frame.color.getHeight(), ofImageType::OF_IMAGE_COLOR);
+				auto in = this->frame.color.getData();
+				auto out = this->colorPreview.getPixels().getData();
+				auto size = this->streams.color.frameSettings.width * this->streams.color.frameSettings.height;
+				for (int i = 0; i < size; i+=2) {
+					const float y1 = in[0];
+					const float y2 = in[2];
+					const float u = in[1];
+					const float v = in[3];
+
+					
+					out[0] = ofClamp(y1 + 1.402 * (v - 128), 0, 255);
+					out[1] = ofClamp(y1 - 0.344 * (u - 128) - 0.714 * (v - 128), 0, 255);
+					out[2] = ofClamp(y1 + 1.772 * (u - 128), 0, 255);
+
+					out[3] = ofClamp(y2 + 1.402 * (v - 128), 0, 255);
+					out[4] = ofClamp(y2 - 0.344 * (u - 128) - 0.714 * (v - 128), 0, 255);
+					out[5] = ofClamp(y2 + 1.772 * (u - 128), 0, 255);
+
+					in += 4;
+					out += 6;
+				}
+				this->colorPreview.update();
+			}
+			
 
 			//skeletons
 			{
-				auto data = (uint8_t*) this->message.getBodyData();
-				data += Header::MultiTrack_2_2_Frame::ColorSize
-					+ Header::MultiTrack_2_2_Frame::DepthSize
-					+ Header::MultiTrack_2_2_Frame::InfraredSize
-					+ Header::MultiTrack_2_2_Frame::BodyIndexSize
-					+ Header::MultiTrack_2_2_Frame::ColorCoordInDepthViewSize;
-
+				auto data = this->bodiesData;
 				auto bodies = this->kinect.getBodySource()->getBodies();
 				
 				writeAndMove(data, (uint8_t)bodies.size());
@@ -173,6 +252,124 @@ namespace ofxMultiTrack {
 	//----------
 	float Node::getDeviceFrameRate() const {
 		return this->kinectFrameRateCounter.getFrameRate();
+	}
+
+	//----------
+	void Node::setupKinect() {
+		if (this->kinect.isOpen()) {
+			this->kinect.close();
+		}
+
+		this->kinect.open();
+
+		auto useTexture = true; /*HACK*/
+
+		if (this->streams.color.enabled) {
+			auto colorSource = this->kinect.initColorSource();
+			colorSource->setYuvPixelsEnabled(true);
+			colorSource->setUseTexture(useTexture);
+		}
+		
+
+		if (this->streams.depth.enabled || this->streams.colorCoordInDepthView.enabled) {
+			auto depthSource = this->kinect.initDepthSource();
+			depthSource->setUseTexture(useTexture);
+		}
+
+		if (this->streams.infrared.enabled) {
+			auto infraredSource = this->kinect.initInfraredSource();
+			infraredSource->setUseTexture(useTexture);
+			
+		}
+
+		if (this->streams.bodyIndex.enabled) {
+			auto bodyIndexSource = this->kinect.initBodyIndexSource();
+			bodyIndexSource->setUseTexture(useTexture);
+		}
+
+		if (this->streams.bodies.enabled) {
+			this->kinect.initBodySource();
+		}
+	}
+
+	//----------
+	template<typename PixelType>
+	void addStreamToMessage(ofPixels_<PixelType> & pixels, const Node::Stream & stream, uint8_t * & messageBodyPosition) {
+		if (stream.enabled) {
+			auto source = dynamic_pointer_cast<ofBaseDraws>(stream.source);
+
+			auto & frameSettings = *(Header::MultiTrack_2_3_Frame::FrameSettings*) messageBodyPosition;
+			frameSettings = stream.frameSettings;
+			messageBodyPosition += sizeof(Header::MultiTrack_2_3_Frame::FrameSettings);
+
+			pixels.setFromExternalPixels(
+				(PixelType*) messageBodyPosition,
+				frameSettings.width,
+				frameSettings.height,
+				Header::MultiTrack_2_3_Frame::toOf(frameSettings.pixelFormat));
+			messageBodyPosition += pixels.getTotalBytes();
+		}
+	}
+		
+
+	//----------
+	void Node::setupMessage() {
+		//calculate the body size
+		size_t bodySize = 0;
+		{
+			auto addImageStreamToBodySize = [&bodySize](const Stream & stream) {
+				if (stream.enabled) {
+					bodySize += sizeof(Header::MultiTrack_2_3_Frame::FrameSettings);
+
+					const auto bitmapSize = stream.frameSettings.size();
+					bodySize += bitmapSize;
+				}
+			};
+
+			addImageStreamToBodySize(this->streams.color);
+			addImageStreamToBodySize(this->streams.depth);
+			addImageStreamToBodySize(this->streams.infrared);
+			addImageStreamToBodySize(this->streams.bodyIndex);
+			addImageStreamToBodySize(this->streams.colorCoordInDepthView);
+
+			if (this->streams.bodies.enabled) {
+				bodySize += Header::MultiTrack_2_3_Frame::Constants::SkeletonSize;
+			}
+		}
+
+		//setup the message
+		{
+			auto headerSize = sizeof(Header::MultiTrack_2_3_Frame);
+			this->message.resizeHeaderAndBody(headerSize + bodySize);
+
+			//initialise the header
+			auto & header = this->message.getHeader<Header::MultiTrack_2_3_Frame>(true);
+
+			auto dataAvailable = 0;
+			{
+				if (this->streams.color.enabled) dataAvailable |= Header::MultiTrack_2_3_Frame::Color;
+				if (this->streams.depth.enabled) dataAvailable |= Header::MultiTrack_2_3_Frame::Depth;
+				if (this->streams.infrared.enabled) dataAvailable |= Header::MultiTrack_2_3_Frame::Infrared;
+				if (this->streams.bodyIndex.enabled) dataAvailable |= Header::MultiTrack_2_3_Frame::BodyIndex;
+				if (this->streams.colorCoordInDepthView.enabled) dataAvailable |= Header::MultiTrack_2_3_Frame::ColorCoordInDepthView;
+				if (this->streams.bodies.enabled) dataAvailable |= Header::MultiTrack_2_3_Frame::Bodies;
+			}
+			header.dataAvailable = (Header::MultiTrack_2_3_Frame::DataAvailable) dataAvailable;
+		}
+
+		//wrap the message in pixel objects
+		//this means that the memory is allocated in Message but can be accessed from each pixels
+		{
+			auto messageBodyPosition = (uint8_t*)this->message.getBodyData();
+			
+			addStreamToMessage(this->frame.color, this->streams.color, messageBodyPosition);
+			addStreamToMessage(this->frame.depth, this->streams.depth, messageBodyPosition);
+			addStreamToMessage(this->frame.infrared, this->streams.infrared, messageBodyPosition);
+			addStreamToMessage(this->frame.bodyIndex, this->streams.bodyIndex, messageBodyPosition);
+			addStreamToMessage(this->frame.colorCoordInDepthFrame, this->streams.colorCoordInDepthView, messageBodyPosition);
+
+			this->bodiesData = messageBodyPosition;
+		}
 	}
 
 }

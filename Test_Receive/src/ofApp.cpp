@@ -131,7 +131,7 @@ void ofApp::update(){
 			const auto & bodies = frame.bodies;
 			for (const auto & body : bodies) {
 				ofxOscBundle bundle;
-				const auto bodyAddress = "/bodies/" + ofToString(body.bodyId);
+				const auto bodyAddress = "/bodies/" + ofToString((int) body.bodyId);
 				{
 					ofxOscMessage message;
 					message.addBoolArg(body.tracked);
@@ -143,7 +143,7 @@ void ofApp::update(){
 				}
 
 				for (const auto & joint : body.joints) {
-					const auto jointAddress = bodyAddress + "/joints/" + ofToString(joint.first);
+					const auto jointAddress = bodyAddress + "/joints/" + ofToString((int) joint.first);
 					{
 						ofxOscMessage message;
 						const auto & position = joint.second.getPosition();
