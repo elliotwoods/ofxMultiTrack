@@ -45,12 +45,14 @@ void ofApp::setup() {
 		this->setGuiMinimised(minimise);
 	});
 
+	bool autoStart = false;
+
 	//initialize sender
 	{
-		bool autoStart = false;
 		string ipAddress = "127.0.0.1";
 		auto port = 4444;
 
+		//load settings file
 		string settingsFileName = "settings.txt";
 		{
 			auto settingsFile = ifstream(ofToDataPath(settingsFileName).c_str(), ios::in);
@@ -123,7 +125,7 @@ void ofApp::setup() {
 	this->smallGui = ofxCvGui::Panels::Groups::makeGrid();
 	this->smallGui->add(widgets);
 
-	this->setGuiMinimised(false);
+	this->setGuiMinimised(autoStart);
 
 	ofSetFrameRate(60);
 }
