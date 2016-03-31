@@ -7,6 +7,9 @@
     <Filter Include="src\ofxMultiTrack">
       <UniqueIdentifier>{f77aa92d-2258-4333-8101-91625627b668}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\ofxMultiTrack\Serialisation">
+      <UniqueIdentifier>{d3a1e78d-fdda-43ca-a096-e618602166d8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\ofxMultiTrack.h">
@@ -21,12 +24,21 @@
     <ClInclude Include="..\src\ofxMultiTrack\NodeConnection.h">
       <Filter>src\ofxMultiTrack</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\ofxMultiTrack\Serialisation\KinectV2.h">
+      <Filter>src\ofxMultiTrack\Serialisation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\ofxMultiTrack\Node.cpp">
       <Filter>src\ofxMultiTrack</Filter>
     </ClCompile>
     <ClCompile Include="..\src\ofxMultiTrack\NodeConnection.cpp">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxMultiTrack\Serialisation\KinectV2.cpp">
+      <Filter>src\ofxMultiTrack\Serialisation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxMultiTrack\Frame.cpp">
       <Filter>src\ofxMultiTrack</Filter>
     </ClCompile>
   </ItemGroup>

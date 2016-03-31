@@ -2,14 +2,20 @@
 
 #include "ofxSquash.h"
 
+#include "psapi.h"
+
 //--------------------------------------------------------------
 void ofApp::setup() {
-
 	this->gui.init();
 	
 	auto widgets = this->gui.addWidgets();
 	widgets->addTitle("MultiTrack Receive");
 	widgets->addFps();
+	widgets->addLiveValueHistory("Memory usage [MB]", []() {
+		PROCESS_MEMORY_COUNTERS pmc;
+		GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
+		return (float)pmc.WorkingSetSize / 1e6;
+	});
 	widgets->addLiveValue<int>("Receiving on port", [this]() {
 		return (float) this->nodeConnection.getReceiver().getPort();
 	});
@@ -50,7 +56,7 @@ void ofApp::setup() {
 		auto worldPanel = this->gui.addWorld();
 		worldPanel->onDrawWorld += [this](ofCamera &) {
 			auto & frame = this->nodeConnection.getFrame();
-			const auto & bodies = frame.bodies;
+			const auto & bodies = frame.getBodies();
 			const auto & boneAtlas = ofxKinectForWindows2::Data::Body::getBonesAtlas();
 			for (const auto & body : bodies) {
 				if (body.tracked) {
@@ -106,29 +112,29 @@ void ofApp::update(){
 		//load data in cast format
 		{
 			//YUY8 -> RGBA8
-			this->color.texture.loadData((unsigned char *) frame.color.getData(), frame.color.getWidth() / 2, frame.color.getHeight(), GL_RGBA);
+			this->color.texture.loadData((unsigned char *) frame.getColor().getData(), frame.getColor().getWidth() / 2, frame.getColor().getHeight(), GL_RGBA);
 			this->color.send();
 
 			//L16 -> RGBA8
-			this->depth.texture.loadData((unsigned char *)frame.depth.getData(), frame.depth.getWidth() / 2, frame.depth.getHeight(), GL_RGBA);
+			this->depth.texture.loadData((unsigned char *)frame.getDepth().getData(), frame.getDepth().getWidth() / 2, frame.getDepth().getHeight(), GL_RGBA);
 			this->depth.send();
 
 			//L16 -> RGBA8
-			this->infrared.texture.loadData((unsigned char *)frame.infrared.getData(), frame.infrared.getWidth() / 2, frame.infrared.getHeight(), GL_RGBA);
+			this->infrared.texture.loadData((unsigned char *)frame.getInfrared().getData(), frame.getInfrared().getWidth() / 2, frame.getInfrared().getHeight(), GL_RGBA);
 			this->infrared.send();
 
 			//L8 -> L8
-			this->bodyIndex.texture.loadData(frame.bodyIndex);
+			this->bodyIndex.texture.loadData(frame.getBodyIndex());
 			this->bodyIndex.send();
 
 			//RG16 -> RGBA8
-			this->colorCoordInDepthFrame.texture.loadData((unsigned char *)frame.colorCoordInDepthFrame.getData(), frame.colorCoordInDepthFrame.getWidth(), frame.colorCoordInDepthFrame.getHeight(), GL_RGBA);
+			this->colorCoordInDepthFrame.texture.loadData((unsigned char *)frame.getColorCoordInDepthFrame().getData(), frame.getColorCoordInDepthFrame().getWidth(), frame.getColorCoordInDepthFrame().getHeight(), GL_RGBA);
 			this->colorCoordInDepthFrame.send();
 		}
 
 		//send body via osc
 		{
-			const auto & bodies = frame.bodies;
+			const auto & bodies = frame.getBodies();
 			for (const auto & body : bodies) {
 				ofxOscBundle bundle;
 				const auto bodyAddress = "/bodies/" + ofToString((int) body.bodyId);
@@ -175,7 +181,7 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-
+	
 }
 
 //--------------------------------------------------------------

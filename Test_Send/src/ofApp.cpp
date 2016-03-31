@@ -119,7 +119,6 @@ void ofApp::setup() {
 				this->gui.add(panel);
 			}
 		}
-		this->gui.add(ofxCvGui::Panels::make(this->node.colorPreview, "RGB decoded"));
 	}
 
 	this->smallGui = ofxCvGui::Panels::Groups::makeGrid();

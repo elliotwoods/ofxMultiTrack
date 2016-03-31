@@ -23,10 +23,13 @@
     <ClInclude Include="..\src\ofxMultiTrack\Frame.h" />
     <ClInclude Include="..\src\ofxMultiTrack\Node.h" />
     <ClInclude Include="..\src\ofxMultiTrack\NodeConnection.h" />
+    <ClInclude Include="..\src\ofxMultiTrack\Serialisation\KinectV2.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\ofxMultiTrack\Frame.cpp" />
     <ClCompile Include="..\src\ofxMultiTrack\Node.cpp" />
     <ClCompile Include="..\src\ofxMultiTrack\NodeConnection.cpp" />
+    <ClCompile Include="..\src\ofxMultiTrack\Serialisation\KinectV2.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1977CCBA-FAB0-4037-8E67-018DE0022E7C}</ProjectGuid>
