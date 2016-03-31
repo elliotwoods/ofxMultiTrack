@@ -5,11 +5,6 @@ using namespace ofxSquashBuddies;
 
 namespace ofxMultiTrack {
 #pragma mark Frame
-	//----------
-	void Frame::serialize(ofxSquashBuddies::Message &) const {
-
-	}
-
 	//---------
 	template<typename DataType>
 	const DataType & readAndMove(uint8_t * & in) {
@@ -25,41 +20,140 @@ namespace ofxMultiTrack {
 	}
 
 	//---------
-	vector<ofxKinectForWindows2::Data::Body> readBodies(uint8_t * data) {
-		auto skeletonCount = readAndMove<uint8_t>(data);
-
-		vector<ofxKinectForWindows2::Data::Body> bodies(skeletonCount);
-		for (int i = 0; i < skeletonCount; i++) {
-			auto & body = bodies[i];
-			auto & joints = body.joints;
-
-			readAndMove(data, (uint8_t&)body.tracked);
-			readAndMove(data, (uint8_t&)body.bodyId);
-			readAndMove(data, (uint64_t&)body.trackingId);
-			readAndMove(data, (uint8_t&)body.leftHandState);
-			readAndMove(data, (uint8_t&)body.rightHandState);
-			auto jointsCount = readAndMove<uint8_t>(data);
-
-			for (int i = 0; i < jointsCount; i++) {
-				auto joint = readAndMove<_Joint>(data);
-				auto jointOrientation = readAndMove<_JointOrientation>(data);
-				joints.emplace(make_pair(joint.JointType, ofxKinectForWindows2::Data::Joint(joint, jointOrientation)));
-			}
-
-			bodies.push_back(body);
-		}
-
-		return bodies;
+	template<typename DataType>
+	void writeAndMove(uint8_t * & out, const DataType & in) {
+		auto & outTyped = ((DataType * &)out);
+		*outTyped++ = in;
 	}
 
-	//---------
-	template<typename PixelType>
-	void readPixels(uint8_t *& data, ofPixels_<PixelType> & pixels) {
-		auto frameSettings = readAndMove<Header::MultiTrack_2_3_Frame::FrameSettings>(data);
-		pixels.allocate(frameSettings.width, frameSettings.height, Header::MultiTrack_2_3_Frame::toOf(frameSettings.pixelFormat));
-		auto size = pixels.getTotalBytes();
-		memcpy(pixels.getData(), data, size);
-		data += size;
+	//----------
+	void Frame::serialize(ofxSquashBuddies::Message & message) const {
+		//--
+		// Gather the streams
+		//--
+		//
+		map<Header::MultiTrack_2_3_Frame::DataType, Header::MultiTrack_2_3_Frame::FrameSettings> streams;
+		{
+			if (this->color.isAllocated()) {
+				Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+					this->color.getWidth(),
+					this->color.getHeight(),
+					Header::MultiTrack_2_3_Frame::PixelFormat::YUY2_8
+				};
+				streams[Header::MultiTrack_2_3_Frame::Color] = frameSettings;
+			}
+			if (this->depth.isAllocated()) {
+				Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+					this->depth.getWidth(),
+					this->depth.getHeight(),
+					Header::MultiTrack_2_3_Frame::PixelFormat::L_16
+				};
+				streams[Header::MultiTrack_2_3_Frame::Depth] = frameSettings;
+			}
+			if (this->infrared.isAllocated()) {
+				Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+					this->infrared.getWidth(),
+					this->infrared.getHeight(),
+					Header::MultiTrack_2_3_Frame::PixelFormat::L_16
+				};
+				streams[Header::MultiTrack_2_3_Frame::Infrared] = frameSettings;
+			}
+			if (this->bodyIndex.isAllocated()) {
+				Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+					this->bodyIndex.getWidth(),
+					this->bodyIndex.getHeight(),
+					Header::MultiTrack_2_3_Frame::PixelFormat::L_8
+				};
+				streams[Header::MultiTrack_2_3_Frame::BodyIndex] = frameSettings;
+			}
+			if (this->colorCoordInDepthFrame.isAllocated()) {
+				Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+					this->colorCoordInDepthFrame.getWidth(),
+					this->colorCoordInDepthFrame.getHeight(),
+					Header::MultiTrack_2_3_Frame::PixelFormat::RG_16
+				};
+				streams[Header::MultiTrack_2_3_Frame::ColorCoordInDepthView] = frameSettings;
+			}
+			if (!this->bodies.empty()) {
+					Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+					0,
+					0,
+					Header::MultiTrack_2_3_Frame::PixelFormat::Unknown
+				};
+				streams[Header::MultiTrack_2_3_Frame::Bodies] = frameSettings;
+			}
+		}
+		//
+		//--
+
+
+
+		//--
+		// Setup the message
+		//--
+		//
+		size_t bodySize = 0;
+		int dataAvailable;
+		for (const auto & stream : streams) {
+			dataAvailable |= stream.first;
+
+			if (stream.first == Header::MultiTrack_2_3_Frame::Bodies) {
+				bodySize += Header::MultiTrack_2_3_Frame::Constants::SkeletonSize;
+			}
+			else {
+				bodySize += sizeof(Header::MultiTrack_2_3_Frame::FrameSettings);
+				bodySize += stream.second.size();
+			}
+		}
+
+		{
+			auto headerSize = sizeof(Header::MultiTrack_2_3_Frame);
+			message.resizeHeaderAndBody(headerSize + bodySize);
+
+			//initialise the header
+			auto & header = message.getHeader<Header::MultiTrack_2_3_Frame>(true);
+			header.dataAvailable = (Header::MultiTrack_2_3_Frame::DataAvailable) dataAvailable;
+		}
+		//
+		//--
+
+
+
+		//--
+		// Write the message
+		//--
+		//
+		auto bodyDataPosition = (uint8_t *) message.getBodyData();
+		for (const auto & stream : streams) {
+
+			//write the image
+			if (stream.first != Header::MultiTrack_2_3_Frame::Bodies) {
+				//write the pixels
+				switch (stream.first) {
+				case Header::MultiTrack_2_3_Frame::Color:
+					Frame::writePixelsToData(bodyDataPosition, this->color, stream.second);
+					break;
+				case Header::MultiTrack_2_3_Frame::Depth:
+					Frame::writePixelsToData(bodyDataPosition, this->depth, stream.second);
+					break;
+				case Header::MultiTrack_2_3_Frame::Infrared:
+					Frame::writePixelsToData(bodyDataPosition, this->infrared, stream.second);
+					break;
+				case Header::MultiTrack_2_3_Frame::BodyIndex:
+					Frame::writePixelsToData(bodyDataPosition, this->bodyIndex, stream.second);
+					break;
+				case Header::MultiTrack_2_3_Frame::ColorCoordInDepthView:
+					Frame::writePixelsToData(bodyDataPosition, this->colorCoordInDepthFrame, stream.second);
+					break;
+				}
+			}
+			//write the bodies
+			else {
+				Frame::writeBodiesToData(bodyDataPosition, this->bodies);
+			}
+		}
+		//
+		//--
 	}
 
 	//----------
@@ -70,27 +164,27 @@ namespace ofxMultiTrack {
 			auto body = (uint8_t*)message.getBodyData();
 			{
 				if (header.dataAvailable & Header::MultiTrack_2_3_Frame::DataAvailable::Color) {
-					readPixels(body, this->color);
+					body = readPixelsFromData(body, this->color);
 				}
 
 				if (header.dataAvailable & Header::MultiTrack_2_3_Frame::DataAvailable::Depth) {
-					readPixels(body, this->depth);
+					body = readPixelsFromData(body, this->depth);
 				}
 
 				if (header.dataAvailable & Header::MultiTrack_2_3_Frame::DataAvailable::Infrared) {
-					readPixels(body, this->infrared);
+					body = readPixelsFromData(body, this->infrared);
 				}
 
 				if (header.dataAvailable & Header::MultiTrack_2_3_Frame::DataAvailable::BodyIndex) {
-					readPixels(body, this->bodyIndex);
+					body = readPixelsFromData(body, this->bodyIndex);
 				}
 
 				if (header.dataAvailable & Header::MultiTrack_2_3_Frame::DataAvailable::ColorCoordInDepthView) {
-					readPixels(body, this->colorCoordInDepthFrame);
+					body = readPixelsFromData(body, this->colorCoordInDepthFrame);
 				}
 
 				if (header.dataAvailable & Header::MultiTrack_2_3_Frame::DataAvailable::Bodies) {
-					this->bodies = readBodies(body);
+					readBodiesFromData(body, this->bodies);
 				}
 			}
 
@@ -128,6 +222,56 @@ namespace ofxMultiTrack {
 	//----------
 	const vector<ofxKinectForWindows2::Data::Body> Frame::getBodies() const {
 		return this->bodies;
+	}
+
+	//---------
+	uint8_t * Frame::readBodiesFromData(uint8_t * data, vector<ofxKinectForWindows2::Data::Body> & bodies) {
+		auto skeletonCount = readAndMove<uint8_t>(data);
+
+		bodies = vector<ofxKinectForWindows2::Data::Body>(skeletonCount);
+		for (int i = 0; i < skeletonCount; i++) {
+			auto & body = bodies[i];
+			auto & joints = body.joints;
+
+			readAndMove(data, (uint8_t&)body.tracked);
+			readAndMove(data, (uint8_t&)body.bodyId);
+			readAndMove(data, (uint64_t&)body.trackingId);
+			readAndMove(data, (uint8_t&)body.leftHandState);
+			readAndMove(data, (uint8_t&)body.rightHandState);
+			auto jointsCount = readAndMove<uint8_t>(data);
+
+			for (int i = 0; i < jointsCount; i++) {
+				auto joint = readAndMove<_Joint>(data);
+				auto jointOrientation = readAndMove<_JointOrientation>(data);
+				joints.emplace(make_pair(joint.JointType, ofxKinectForWindows2::Data::Joint(joint, jointOrientation)));
+			}
+
+			bodies.push_back(body);
+		}
+
+		return data;
+	}
+
+	//---------
+	uint8_t * Frame::writeBodiesToData(uint8_t * data, const vector<ofxKinectForWindows2::Data::Body> & bodies) {
+		writeAndMove(data, (uint8_t)bodies.size());
+
+		for (const auto body : bodies) {
+			const auto & joints = body.joints;
+			writeAndMove(data, (uint8_t)body.tracked);
+			writeAndMove(data, (uint8_t)body.bodyId);
+			writeAndMove(data, (uint64_t)body.trackingId);
+			writeAndMove(data, (uint8_t)body.leftHandState);
+			writeAndMove(data, (uint8_t)body.rightHandState);
+			writeAndMove(data, (uint8_t)joints.size());
+
+			for (const auto & joint : joints) {
+				writeAndMove(data, joint.second.getRawJoint());
+				writeAndMove(data, joint.second.getRawJointOrientation());
+			}
+		}
+
+		return data;
 	}
 
 #pragma mark DeviceFrame
@@ -362,13 +506,6 @@ namespace ofxMultiTrack {
 		}
 	}
 
-	//---------
-	template<typename DataType>
-	void writeAndMove(uint8_t * & out, const DataType & in) {
-		auto & outTyped = ((DataType * &)out);
-		*outTyped++ = in;
-	}
-
 	//----------
 	void DeviceFrame::copyFromKinect() {
 		//for each active stream, copy from the device source to the local pixels object
@@ -448,22 +585,7 @@ namespace ofxMultiTrack {
 				if (source) {
 					auto data = (uint8_t*)stream.data;
 					auto bodies = source->getBodies();
-
-					writeAndMove(data, (uint8_t)bodies.size());
-					for (const auto body : bodies) {
-						const auto & joints = body.joints;
-						writeAndMove(data, (uint8_t)body.tracked);
-						writeAndMove(data, (uint8_t)body.bodyId);
-						writeAndMove(data, (uint64_t)body.trackingId);
-						writeAndMove(data, (uint8_t)body.leftHandState);
-						writeAndMove(data, (uint8_t)body.rightHandState);
-						writeAndMove(data, (uint8_t)joints.size());
-
-						for (const auto & joint : joints) {
-							writeAndMove(data, joint.second.getRawJoint());
-							writeAndMove(data, joint.second.getRawJointOrientation());
-						}
-					}
+					data = Frame::writeBodiesToData(data, bodies);
 				}
 				break;
 			}
