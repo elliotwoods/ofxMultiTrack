@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 
+#include "ofxKinectForWindows2.h"
 #include "ofxMultiTrack.h"
 #include "ofxCvGui.h"
 
@@ -36,7 +37,8 @@ class ofApp : public ofBaseApp{
 		ofxCvGui::PanelGroupPtr bigGui;
 		ofxCvGui::PanelGroupPtr smallGui;
 
-		ofxMultiTrack::Node node;
+		ofxKinectForWindows2::Device kinect;
+		ofxMultiTrack::Sender sender;
 
 		bool droppedFrame = false;
 };

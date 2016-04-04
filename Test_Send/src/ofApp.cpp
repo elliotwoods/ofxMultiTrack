@@ -13,29 +13,29 @@ void ofApp::setup() {
 	widgets->addTitle("MultiTrack Send");
 	widgets->addFps();
 	widgets->addLiveValueHistory("Kinect device framerate", [this]() {
-		return this->node.getDeviceFrameRate();
+		return this->sender.getDeviceFrameRate();
 	});
 	widgets->addLiveValueHistory("Sending framerate", [this]() {
-		return this->node.getSender().getSendFramerate();
+		return this->sender.getSender().getSendFramerate();
 	});
 	widgets->addLiveValueHistory("Dropped frame", [this]() {
 		return (float) this->droppedFrame;
 	});
 	widgets->addEditableValue<int>("Packet size", [this]() {
-		return (int) this->node.getSender().getPacketSize();
+		return (int) this->sender.getSender().getPacketSize();
 	}, [this](string newSizeString) {
 		if (!newSizeString.empty()) {
-			this->node.getSender().setPacketSize(ofToInt(newSizeString));
+			this->sender.getSender().setPacketSize(ofToInt(newSizeString));
 		}
 	});
 	widgets->addLiveValue<size_t>("Current socket buffer size", [this]() {
-		return this->node.getSender().getCurrentSocketBufferSize();
+		return this->sender.getSender().getCurrentSocketBufferSize();
 	});
 	widgets->addEditableValue<int>("Max socket buffer size", [this]() {
-		return (int) this->node.getSender().getMaxSocketBufferSize();
+		return (int) this->sender.getSender().getMaxSocketBufferSize();
 	}, [this](string newSizeString) {
 		if (!newSizeString.empty()) {
-			this->node.getSender().setMaxSocketBufferSize(ofToInt(newSizeString));
+			this->sender.getSender().setMaxSocketBufferSize(ofToInt(newSizeString));
 		}
 	});
 	widgets->addToggle("Minimise GUI",
@@ -47,7 +47,7 @@ void ofApp::setup() {
 
 	bool autoStart = false;
 
-	//initialize sender
+	//get sender settings
 	{
 		string ipAddress = "127.0.0.1";
 		auto port = 4444;
@@ -108,23 +108,33 @@ void ofApp::setup() {
 		}
 		
 
-		this->node.init(ipAddress, port);
-		ofSetWindowTitle("Sending to : " + ipAddress + ":" + ofToString(port));
+		//initialise the Kinect
+		this->kinect.open();
+		this->kinect.initColorSource();
+		this->kinect.initDepthSource();
+		this->kinect.initInfraredSource();
+		this->kinect.initBodyIndexSource();
+		this->kinect.initBodySource();
 
-		auto sources = this->node.getKinect().getSources();
+		//initialise the ofxMultiTrack::Sender
+		this->sender.init(this->kinect, ipAddress, port);
+
+		//build the gui
+		ofSetWindowTitle("Sending to : " + ipAddress + ":" + ofToString(port));
+		auto sources = this->kinect.getSources();
 		for (auto source : sources) {
 			auto imageSource = dynamic_pointer_cast<ofBaseHasTexture>(source);
 			if (imageSource) {
-				auto panel = ofxCvGui::Panels::make(imageSource->getTexture(), source->getTypeName());
+				auto panel = ofxCvGui::Panels::makeTexture(imageSource->getTexture(), source->getTypeName());
 				this->gui.add(panel);
 			}
 		}
 	}
 
+	//make a small gui for when we're 'minimised'
 	this->smallGui = ofxCvGui::Panels::Groups::makeGrid();
 	this->smallGui->add(widgets);
-
-	this->setGuiMinimised(autoStart);
+	this->setGuiMinimised(autoStart); //if autostart, then start minimised
 
 	ofSetFrameRate(60);
 }
@@ -133,12 +143,12 @@ void ofApp::setup() {
 void ofApp::setGuiMinimised(bool minimised) {
 	this->guiMinimised = minimised;
 	if (minimised) {
-		this->node.setTexturesEnabled(false);
+		this->kinect.setUseTextures(false);
 		this->guiController->setRootGroup(this->smallGui);
 		ofSetWindowShape(300, 500);
 	}
 	else {
-		this->node.setTexturesEnabled(true);
+		this->kinect.setUseTextures(true);
 		this->guiController->setRootGroup(this->bigGui);
 		ofSetWindowShape(640 * 3, 480 * 2);
 	}
@@ -146,7 +156,8 @@ void ofApp::setGuiMinimised(bool minimised) {
 
 //--------------------------------------------------------------
 void ofApp::update(){
-	this->droppedFrame = ! this->node.update();
+	this->kinect.update();
+	this->droppedFrame = ! this->sender.update();
 }
 
 //--------------------------------------------------------------
@@ -156,8 +167,7 @@ void ofApp::draw(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-	auto shader = ofxAssets::AssetRegister().getShaderPointer("ofxCvGui::KinectForWindows2Depth");
-	shader->reload();
+	
 }
 
 //--------------------------------------------------------------

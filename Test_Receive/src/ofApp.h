@@ -28,7 +28,7 @@ class ofApp : public ofBaseApp{
 		
 		ofxCvGui::Builder gui;
 
-		ofxMultiTrack::NodeConnection nodeConnection;
+		ofxMultiTrack::Receiver receiver;
 
 		struct Texture {
 			ofTexture texture;

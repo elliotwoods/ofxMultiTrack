@@ -305,6 +305,7 @@ namespace ofxMultiTrack {
 			{
 				auto source = device.getColorSource();
 				if (source) {
+					source->setYuvPixelsEnabled(true);
 					auto dataType = Header::MultiTrack_2_3_Frame::Color;
 					dataAvailable |= dataType;
 

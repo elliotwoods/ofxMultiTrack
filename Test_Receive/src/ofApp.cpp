@@ -2,8 +2,6 @@
 
 #include "ofxSquash.h"
 
-#include "psapi.h"
-
 //--------------------------------------------------------------
 void ofApp::setup() {
 	this->gui.init();
@@ -11,22 +9,18 @@ void ofApp::setup() {
 	auto widgets = this->gui.addWidgets();
 	widgets->addTitle("MultiTrack Receive");
 	widgets->addFps();
-	widgets->addLiveValueHistory("Memory usage [MB]", []() {
-		PROCESS_MEMORY_COUNTERS pmc;
-		GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
-		return (float)pmc.WorkingSetSize / 1e6;
-	});
+	widgets->addMemoryUsage();
 	widgets->addLiveValue<int>("Receiving on port", [this]() {
-		return (float) this->nodeConnection.getReceiver().getPort();
+		return (float) this->receiver.getReceiver().getPort();
 	});
 	widgets->addIndicator("Frame incoming", [this]() {
 		return this->newFrame;
 	});
 	widgets->addLiveValueHistory("Receiver incoming frame rate", [this]() {
-		return (float) this->nodeConnection.getReceiver().getIncomingFramerate();
+		return (float) this->receiver.getReceiver().getIncomingFramerate();
 	});
 	widgets->addLiveValueHistory("Dropped frames", [this]() {
-		return (float) this->nodeConnection.getReceiver().getDroppedFrames().size();
+		return (float) this->receiver.getReceiver().getDroppedFrames().size();
 	});
 	widgets->addLiveValue<string>("Sending Body OSC to ", [this]() {
 		return this->oscHost + ":" + ofToString(this->oscPort);;
@@ -36,7 +30,7 @@ void ofApp::setup() {
 	{
 		auto port = 4444;
 
-		while (!this->nodeConnection.init(port)) {
+		while (!this->receiver.init(port)) {
 			port++;
 		}
 
@@ -55,20 +49,11 @@ void ofApp::setup() {
 		
 		auto worldPanel = this->gui.addWorld();
 		worldPanel->onDrawWorld += [this](ofCamera &) {
-			auto & frame = this->nodeConnection.getFrame();
+			auto & frame = this->receiver.getFrame();
 			const auto & bodies = frame.getBodies();
 			const auto & boneAtlas = ofxKinectForWindows2::Data::Body::getBonesAtlas();
 			for (const auto & body : bodies) {
-				if (body.tracked) {
-					const auto & joints = body.joints;
-					for (const auto & bone : boneAtlas) {
-						auto findFirst = joints.find(bone.first);
-						auto findSecond = joints.find(bone.second);
-						if (findFirst != joints.end() && findSecond != joints.end()) {
-							ofLine(findFirst->second.getPosition(), findSecond->second.getPosition());
-						}
-					}
-				}
+				body.drawWorld();
 			}
 		};
 	}
@@ -104,10 +89,10 @@ void ofApp::setup() {
 
 //--------------------------------------------------------------
 void ofApp::update(){
-	this->nodeConnection.update();
-	if (this->nodeConnection.isFrameNew()) {
+	this->receiver.update();
+	if (this->receiver.isFrameNew()) {
 		this->newFrame = true;
-		const auto & frame = this->nodeConnection.getFrame();
+		const auto & frame = this->receiver.getFrame();
 
 		//load data in cast format
 		{

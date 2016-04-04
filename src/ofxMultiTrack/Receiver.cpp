@@ -1,10 +1,10 @@
-#include "NodeConnection.h"
+#include "Receiver.h"
 
 using namespace ofxSquashBuddies;
 
 namespace ofxMultiTrack {
 	//---------
-	bool NodeConnection::init(int port) {
+	bool Receiver::init(int port) {
 		if (!this->receiver.init(port)) {
 			return false;
 		}
@@ -12,7 +12,7 @@ namespace ofxMultiTrack {
 	}
 
 	//---------
-	void NodeConnection::update() {
+	void Receiver::update() {
 		this->newFrame = false;
 
 		//wait up to 1/20th of a sec for a new frame
@@ -27,17 +27,17 @@ namespace ofxMultiTrack {
 	}
 
 	//---------
-	bool NodeConnection::isFrameNew() const {
+	bool Receiver::isFrameNew() const {
 		return this->newFrame;
 	}
 
 	//---------
-	const Frame & NodeConnection::getFrame() const {
+	const Frame & Receiver::getFrame() const {
 		return this->frame;
 	}
 
 	//---------
-	ofxSquashBuddies::Receiver & NodeConnection::getReceiver() {
+	ofxSquashBuddies::Receiver & Receiver::getReceiver() {
 		return this->receiver;
 	}
 

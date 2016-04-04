@@ -6,20 +6,18 @@
 #include "ofxKinectForWindows2.h"
 
 namespace ofxMultiTrack {
-	class Node {
+	class Sender {
 	public:
-		void init(string ipAddress, int port);
+		void init(ofxKinectForWindows2::Device &, string ipAddress, int port);
 		bool update(); // return false if dropped a frame
 
 		ofxKinectForWindows2::Device & getKinect();
 		ofxSquashBuddies::Sender & getSender();
 
-		void setTexturesEnabled(bool);
-
 		float getDeviceFrameRate() const;
 
 	protected:
-		ofxKinectForWindows2::Device kinect;
+		ofxKinectForWindows2::Device * kinect = nullptr;
 
 		ofxSquashBuddies::Sender sender;
 		DeviceFrame deviceFrame;

@@ -6,7 +6,7 @@
 #include "ofxKinectForWindows2.h"
 
 namespace ofxMultiTrack {
-	class NodeConnection {
+	class Receiver {
 	public:
 		bool init(int port);
 		void update();
