@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\ofxMultiTrack.h" />
+    <ClInclude Include="..\src\ofxMultiTrack\Constants.h" />
     <ClInclude Include="..\src\ofxMultiTrack\Frame.h" />
     <ClInclude Include="..\src\ofxMultiTrack\Receiver.h" />
     <ClInclude Include="..\src\ofxMultiTrack\Sender.h" />

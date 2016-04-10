@@ -21,6 +21,9 @@
     <ClInclude Include="..\src\ofxMultiTrack\Sender.h">
       <Filter>src\ofxMultiTrack</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\ofxMultiTrack\Constants.h">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\ofxMultiTrack\Frame.cpp">
