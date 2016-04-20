@@ -22,13 +22,13 @@
     <ClInclude Include="..\src\ofxMultiTrack.h" />
     <ClInclude Include="..\src\ofxMultiTrack\Constants.h" />
     <ClInclude Include="..\src\ofxMultiTrack\Frame.h" />
-    <ClInclude Include="..\src\ofxMultiTrack\Receiver.h" />
-    <ClInclude Include="..\src\ofxMultiTrack\Sender.h" />
+    <ClInclude Include="..\src\ofxMultiTrack\Publisher.h" />
+    <ClInclude Include="..\src\ofxMultiTrack\Subscriber.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\ofxMultiTrack\Frame.cpp" />
-    <ClCompile Include="..\src\ofxMultiTrack\Receiver.cpp" />
-    <ClCompile Include="..\src\ofxMultiTrack\Sender.cpp" />
+    <ClCompile Include="..\src\ofxMultiTrack\Publisher.cpp" />
+    <ClCompile Include="..\src\ofxMultiTrack\Subscriber.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1977CCBA-FAB0-4037-8E67-018DE0022E7C}</ProjectGuid>
