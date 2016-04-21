@@ -44,6 +44,8 @@ class ofApp : public ofBaseApp{
 		Texture bodyIndex;
 		Texture colorCoordInDepthFrame;
 
+		ofFloatPixels depthToWorldTable;
+
 		int clientIndex = 0;
 		bool newFrame = false;
 		
