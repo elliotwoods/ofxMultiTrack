@@ -41,11 +41,11 @@ void ofApp::setup() {
 
 		this->oscPort = port + 1000;
 
-		this->gui.add(ofxCvGui::Panels::make(this->color.texture, "Color"));
-		this->gui.add(ofxCvGui::Panels::make(this->depth.texture, "Depth"));
-		this->gui.add(ofxCvGui::Panels::make(this->infrared.texture, "Infrared"));
-		this->gui.add(ofxCvGui::Panels::make(this->bodyIndex.texture, "BodyIndex"));
-		this->gui.add(ofxCvGui::Panels::make(this->colorCoordInDepthFrame.texture, "ColorCoordInDepthView"));
+		this->gui.add(ofxCvGui::Panels::makeTexture(this->color.texture, "Color"));
+		this->gui.add(ofxCvGui::Panels::makeTexture(this->depth.texture, "Depth"));
+		this->gui.add(ofxCvGui::Panels::makeTexture(this->infrared.texture, "Infrared"));
+		this->gui.add(ofxCvGui::Panels::makeTexture(this->bodyIndex.texture, "BodyIndex"));
+		this->gui.add(ofxCvGui::Panels::makeTexture(this->colorCoordInDepthFrame.texture, "ColorCoordInDepthView"));
 		
 		auto worldPanel = this->gui.addWorld();
 		worldPanel->onDrawWorld += [this](ofCamera &) {
