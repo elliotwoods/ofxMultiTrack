@@ -16,7 +16,7 @@ namespace ofxMultiTrack {
 		this->newFrame = false;
 
 		//wait up to 1/20th of a sec for a new frame
-		this->subscriber.update(chrono::milliseconds(1000 / 20));
+		this->subscriber.update();// chrono::milliseconds(1000 / 20));
 
 		if (this->subscriber.isFrameNew()) {
 			const auto & message = this->subscriber.getMessage();
