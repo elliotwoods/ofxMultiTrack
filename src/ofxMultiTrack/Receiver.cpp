@@ -1,3 +1,4 @@
+#ifdef OFXMULTITRACK_UDP
 #include "Receiver.h"
 
 using namespace ofxSquashBuddies;
@@ -42,3 +43,4 @@ namespace ofxMultiTrack {
 	}
 
 }
+#endif // OFXMULTITRACK_UDP
