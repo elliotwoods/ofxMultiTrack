@@ -4,7 +4,6 @@
 
 //--------------------------------------------------------------
 void ofApp::setup() {
-
 	ofSetFrameRate(30);
 
 	this->gui.init();
@@ -52,13 +51,12 @@ void ofApp::setup() {
 				filename = result;
 			}
 
-			string saveString;
 			{
 				ofFloatPixels depthToWorldTable;
 				kinect.getDepthSource()->getDepthToWorldTable(depthToWorldTable);
 				ofxSquashBuddies::Message message;
 				message.setData(depthToWorldTable);
-				saveString = message.getMessageString();
+				const auto & saveString = message.getMessageString();
 				ofBuffer saveBuffer(saveString);
 				if (!ofBufferToFile(ofToDataPath(filename), saveBuffer)) {
 					ofSystemAlertDialog("Error saving table to disk!");
@@ -113,8 +111,6 @@ void ofApp::setup() {
 	this->smallGui = ofxCvGui::Panels::Groups::makeGrid();
 	this->smallGui->add(widgets);
 	this->setGuiMinimised(autoStart); //if autostart, then start minimised
-
-	ofSetFrameRate(60);
 }
 
 //--------------------------------------------------------------

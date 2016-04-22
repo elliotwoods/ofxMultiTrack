@@ -4,6 +4,7 @@
 
 #include "ofxMultiTrack.h"
 #include "ofxCvGui.h"
+#include "ofxSpout.h"
 #include "ofxOsc.h"
 
 class ofApp : public ofBaseApp{
@@ -29,14 +30,26 @@ class ofApp : public ofBaseApp{
 
 		ofxMultiTrack::Subscriber subscriber;
 
-		ofImage color;
-		ofShortImage depth;
-		ofShortImage infrared;
-		ofImage bodyIndex;
-		ofShortImage colorCoordInDepthFrame;
+		struct Texture {
+			ofTexture texture;
+			ofxSpout::Sender sender;
+
+			void send() {
+				this->sender.send(this->texture);
+			}
+		};
+		Texture color;
+		Texture depth;
+		Texture infrared;
+		Texture bodyIndex;
+		Texture colorCoordInDepthFrame;
 
 		ofFloatPixels depthToWorldTable;
 
 		int clientIndex = 0;
 		bool newFrame = false;
+		
+		ofxOscSender oscSender;
+		int oscPort;
+		string oscHost = "127.0.0.1";
 };
