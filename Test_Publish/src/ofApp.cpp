@@ -71,18 +71,11 @@ void ofApp::setup() {
 		this->setGuiMinimised(minimise);
 	});
 
-	bool autoStart = false;
+	bool autoStart = true;
 
-	//get sender settings
+	//setup sender
 	{
 		auto port = 5000;
-
-		{
-			auto result = ofSystemTextBoxDialog("Select publishing port [" + ofToString(port) + "]");
-			if (!result.empty()) {
-				port = ofToInt(result);
-			}
-		}
 
 		//initialise the Kinect
 		this->kinect.open();

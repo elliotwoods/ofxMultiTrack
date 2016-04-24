@@ -243,7 +243,8 @@ namespace ofxMultiTrack {
 			for (int i = 0; i < jointsCount; i++) {
 				auto joint = readAndMove<_Joint>(data);
 				auto jointOrientation = readAndMove<_JointOrientation>(data);
-				joints.emplace(make_pair(joint.JointType, ofxKinectForWindows2::Data::Joint(joint, jointOrientation)));
+				auto jointInDepthSpace = readAndMove<ofVec2f>(data);
+				joints.emplace(make_pair(joint.JointType, ofxKinectForWindows2::Data::Joint(joint, jointOrientation, jointInDepthSpace)));
 			}
 
 			bodies.push_back(body);
@@ -266,8 +267,9 @@ namespace ofxMultiTrack {
 			writeAndMove(data, (uint8_t)joints.size());
 
 			for (const auto & joint : joints) {
-				writeAndMove(data, joint.second.getRawJoint());
-				writeAndMove(data, joint.second.getRawJointOrientation());
+				writeAndMove(data, (_Joint) joint.second.getRawJoint());
+				writeAndMove(data, (_JointOrientation) joint.second.getRawJointOrientation());
+				writeAndMove(data, (ofVec2f) joint.second.getPositionInDepthMap());
 			}
 		}
 
