@@ -4,12 +4,11 @@
 //========================================================================
 int main( ){
 	ofGLFWWindowSettings windowSettings;
-	windowSettings.setGLVersion(3, 2);
-	windowSettings.width = 640 * 2;
-	windowSettings.height = 480 * 2;
+	windowSettings.setGLVersion(3, 0);
+	windowSettings.width = 1920;
+	windowSettings.height = 1080;
 	windowSettings.depthBits = 32;
 	auto window = ofCreateWindow(windowSettings);
 
 	ofRunApp(new ofApp());
-
 }

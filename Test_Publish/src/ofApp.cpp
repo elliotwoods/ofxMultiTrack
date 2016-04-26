@@ -13,6 +13,13 @@ void ofApp::setup() {
 	auto widgets = this->gui.addWidgets();
 	widgets->addTitle("MultiTrack Publish");
 	widgets->addFps();
+	widgets->addEditableValue<float>("App framerate [Hz]", []() {
+		return ofGetFrameRate();
+	}, [](string result) {
+		if (!result.empty()) {
+			ofSetFrameRate(ofToFloat(result));
+		}
+	});
 	widgets->addMemoryUsage();
 	widgets->addLiveValueHistory("Kinect device framerate", [this]() {
 		return this->publisher.getDeviceFrameRate();
@@ -95,6 +102,13 @@ void ofApp::setup() {
 			auto imageSource = dynamic_pointer_cast<ofBaseHasTexture>(source);
 			if (imageSource) {
 				auto panel = ofxCvGui::Panels::makeTexture(imageSource->getTexture(), source->getTypeName());
+
+				if (dynamic_pointer_cast<ofxKinectForWindows2::Source::Depth>(source)) {
+					panel->setInputRange(0, 8000.0f / (float)0xffff);
+				}
+				if (dynamic_pointer_cast<ofxKinectForWindows2::Source::Infrared>(source)) {
+					panel->setInputRange(0, 1024.0f / (float)0xffff);
+				}
 				this->gui.add(panel);
 			}
 		}

@@ -6,6 +6,7 @@
 #include "ofxCvGui.h"
 #include "ofxOsc.h"
 
+#define RECEIVER_COUNT 3
 class ofApp : public ofBaseApp{
 
 	public:
@@ -27,18 +28,22 @@ class ofApp : public ofBaseApp{
 		
 		ofxCvGui::Builder gui;
 
-		ofxMultiTrack::Subscriber subscriber;
+		struct Receiver {
+			ofxMultiTrack::Subscriber subscriber;
 
-		ofImage color;
-		ofShortImage depth;
-		ofShortImage infrared;
-		ofImage bodyIndex;
-		ofShortImage colorCoordInDepthFrame;
+			ofImage color;
+			ofShortImage depth;
+			ofShortImage infrared;
+			ofImage bodyIndex;
+			ofShortImage colorCoordInDepthFrame;
 
-		ofFloatPixels depthToWorldTable;
+			ofFloatPixels depthToWorldTable;
 
-		int clientIndex = 0;
-		bool newFrame = false;
+			int clientIndex = 0;
+			bool newFrame = false;
 
-		vector<ofxSquashBuddies::DroppedFrame> droppedFrames;
+			vector<ofxSquashBuddies::DroppedFrame> droppedFrames;
+		};
+		
+		Receiver receivers[RECEIVER_COUNT];
 };

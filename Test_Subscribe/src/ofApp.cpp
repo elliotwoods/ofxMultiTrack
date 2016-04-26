@@ -12,7 +12,7 @@ void ofApp::setup() {
 	widgets->addTitle("MultiTrack Subscribe");
 	widgets->addFps();
 	widgets->addMemoryUsage();
-	widgets->addIndicator("Frame incoming", [this]() {
+	widgets->addIndicatorBool("Frame incoming", [this]() {
 		return this->newFrame;
 	});
 	widgets->addLiveValueHistory("Receiver incoming frame rate", [this]() {
@@ -20,6 +20,24 @@ void ofApp::setup() {
 	});
 	widgets->addLiveValueHistory("Dropped frames", [this]() {
 		return (float) this->subscriber.getSubscriber().getDroppedFrames().size();
+	});
+	widgets->addIndicatorBool("---Dropped packets", [this]() {
+		bool droppedPacket = false;
+		for (const auto & droppedFrame : this->droppedFrames) {
+			if (droppedFrame.reason == ofxSquashBuddies::DroppedFrame::Reason::DroppedPackets) {
+				return true;
+			}
+		}
+		return false;
+	});
+	widgets->addIndicatorBool("---Skipped frame", [this]() {
+		bool droppedPacket = false;
+		for (const auto & droppedFrame : this->droppedFrames) {
+			if (droppedFrame.reason == ofxSquashBuddies::DroppedFrame::Reason::SkippedFrame) {
+				return true;
+			}
+		}
+		return false;
 	});
 	widgets->addButton("Load Depth To World Table", [this]() {
 		ofBuffer loadBuffer;
@@ -67,6 +85,7 @@ void ofApp::setup() {
 			auto bodyIndexPanel = ofxCvGui::Panels::makeTexture(this->bodyIndex.getTexture(), "BodyIndex");
 			auto colorCoordInDepthFramePanel = ofxCvGui::Panels::makeTexture(this->colorCoordInDepthFrame.getTexture(), "ColorCoordInDepthView");
 
+			infraredPanel->setInputRange(0, 0x0FFF);
 			depthPanel->setInputRange(0, 8000.0f / float(0xffff));
 			
 			bodyIndexPanel->setInputRange(0, 12.0f / float(0xff));
@@ -122,6 +141,7 @@ void ofApp::update(){
 	{
 		this->newFrame = false;
 	}
+	this->droppedFrames = this->subscriber.getSubscriber().getDroppedFrames();
 }
 
 //--------------------------------------------------------------
