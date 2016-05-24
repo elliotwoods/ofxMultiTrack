@@ -280,7 +280,7 @@ namespace ofxMultiTrack {
 	//----------
 	template<typename PixelType>
 	void entanglePixelsWithMessage(ofPixels_<PixelType> & pixels, const DeviceFrame::Stream & stream, uint8_t * & messageBodyPosition) {
-		auto source = dynamic_pointer_cast<ofBaseDraws>(stream.source);
+		//auto source = dynamic_pointer_cast<ofBaseDraws>(stream.source);
 
 		auto & frameSettings = *(Header::MultiTrack_2_3_Frame::FrameSettings*) messageBodyPosition;
 		frameSettings = stream.frameSettings;
@@ -295,18 +295,46 @@ namespace ofxMultiTrack {
 	}
 
 	//----------
-	void DeviceFrame::init(shared_ptr<ofxKinectForWindows2::Device> device) {
+	void DeviceFrame::init(shared_ptr<ofxKinectForWindows2::Device> device, shared_ptr<ofxMachineVision::Grabber::Simple> grabber) {
+		int dataAvailable = 0;
+
+		//--
+		// Declare the external image first, if any
+		//--
+		//
+		this->grabber = grabber;
+		if (this->grabber) {
+			auto dataType = Header::MultiTrack_2_3_Frame::Color;
+			dataAvailable |= dataType;
+
+			Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+				MULTITRACK_FRAME_EXT_COLOR_WIDTH,
+				MULTITRACK_FRAME_EXT_COLOR_HEIGHT,
+				Header::MultiTrack_2_3_Frame::PixelFormat::RGB_8
+			};
+			this->extStream = {
+				dataType,
+				frameSettings,
+				nullptr,
+				0,
+				frameSettings.size()
+			};
+		}
+
 		//--
 		// Declare the streams
 		//--
 		//
 		this->streams.clear();
-		int dataAvailable = 0;
 		{
 			//color
 			{
 				auto source = device->getColorSource();
 				if (source) {
+					if (dataAvailable & Header::MultiTrack_2_3_Frame::DataAvailable::Color) {
+						ofLogWarning("DeviceFrame::init") << "Color already coming in from Grabber, disable Kinect color!";
+					}
+
 					source->setYuvPixelsEnabled(true);
 					auto dataType = Header::MultiTrack_2_3_Frame::Color;
 					dataAvailable |= dataType;
@@ -323,6 +351,7 @@ namespace ofxMultiTrack {
 						0,
 						frameSettings.size()
 					};
+					stream.source = source;
 					this->streams.push_back(stream);
 				}
 			}
@@ -414,7 +443,7 @@ namespace ofxMultiTrack {
 						frameSettings,
 						depthSource,
 						0,
-						frameSettings.size()
+						frameSettings.size(),
 					};
 					this->streams.push_back(stream);
 				}
@@ -450,6 +479,11 @@ namespace ofxMultiTrack {
 		//calculate the body size
 		size_t bodySize = 0;
 		{
+			if (this->extStream.size) {
+				bodySize += sizeof(Header::MultiTrack_2_3_Frame::FrameSettings);
+				bodySize += this->extStream.size;
+			}
+
 			for (const auto & stream : this->streams) {
 				if (stream.dataType != Header::MultiTrack_2_3_Frame::DataType::Bodies) {
 					//all image sources also need a header for the image as well as the data
@@ -473,6 +507,12 @@ namespace ofxMultiTrack {
 		//this means that the memory is allocated in Message but can be accessed from each pixels
 		{
 			auto messageBodyPosition = (uint8_t*)this->message.getBodyData();
+
+			if (this->extStream.size) {
+				this->extStream.data = messageBodyPosition;
+				entanglePixelsWithMessage(this->color, this->extStream, messageBodyPosition);
+			}
+
 			for (auto & stream : this->streams) {
 				stream.data = messageBodyPosition;
 
@@ -598,6 +638,30 @@ namespace ofxMultiTrack {
 		}
 	}
 
+	//----------
+	void DeviceFrame::copyFromGrabber() {
+		if (this->grabber && this->extStream.size) {
+			const auto & inputPixels = this->grabber->getPixels();
+			if (inputPixels.isAllocated()) {
+				const auto inputWidth = inputPixels.getWidth();
+				const auto inputHeight = inputPixels.getHeight();
+				const auto outputWidth = this->extStream.frameSettings.width;
+				const auto outputHeight = this->extStream.frameSettings.height;
+
+				if (outputWidth == inputWidth && outputHeight == inputHeight) {
+					//copy if dimensions are the same
+					this->color = inputPixels;
+				}
+				else {
+					//resample if dimensions are different
+					if (!this->color.isAllocated()) {
+						this->color.allocate(outputWidth, outputHeight, Header::MultiTrack_2_3_Frame::toOf(this->extStream.frameSettings.pixelFormat));
+					}
+					inputPixels.resizeTo(this->color);
+				}
+			}
+		}
+	}
 
 	//----------
 	const ofxSquashBuddies::Message & DeviceFrame::getMessage() const {

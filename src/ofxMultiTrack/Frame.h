@@ -1,11 +1,15 @@
 #pragma once
 
-#include "ofPixels.h" 
+#include "ofPixels.h"
 #include "ofxKinectForWindows2.h"
+#include "ofxMachineVision.h"
 #include "ofxSquashBuddies/Message.h"
 
 #define MULTITRACK_FRAME_COLOR_WIDTH 1920
 #define MULTITRACK_FRAME_COLOR_HEIGHT 720
+
+#define MULTITRACK_FRAME_EXT_COLOR_WIDTH 1280
+#define MULTITRACK_FRAME_EXT_COLOR_HEIGHT 720
 
 namespace ofxMultiTrack {
 	class Frame {
@@ -62,13 +66,16 @@ namespace ofxMultiTrack {
 			size_t size;
 		};
 
-		void init(shared_ptr<ofxKinectForWindows2::Device>);
+		void init(shared_ptr<ofxKinectForWindows2::Device>, shared_ptr<ofxMachineVision::Grabber::Simple> = nullptr);
 		void copyFromKinect();
+		void copyFromGrabber();
 
 		const ofxSquashBuddies::Message & getMessage() const;
 	protected:
 		ofxSquashBuddies::Message message;
 		vector<Stream> streams;
+		shared_ptr<ofxMachineVision::Grabber::Simple> grabber;
+		Stream extStream;
 	private:
 		ofFloatPixels colorCoordInDepthFrameFloat;
 	};
