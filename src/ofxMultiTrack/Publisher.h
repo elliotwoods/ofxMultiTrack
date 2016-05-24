@@ -8,16 +8,16 @@
 namespace ofxMultiTrack {
 	class Publisher {
 	public:
-		void init(ofxKinectForWindows2::Device &, int port);
+		void init(shared_ptr<ofxKinectForWindows2::Device>, int port);
 		bool update(); // return false if dropped a frame
 
-		ofxKinectForWindows2::Device & getKinect();
+		shared_ptr<ofxKinectForWindows2::Device> getKinect();
 		ofxSquashBuddies::Publisher & getPublisher();
 
 		float getDeviceFrameRate() const;
 
 	protected:
-		ofxKinectForWindows2::Device * kinect = nullptr;
+		shared_ptr<ofxKinectForWindows2::Device> kinect;
 
 		ofxSquashBuddies::Publisher publisher;
 		DeviceFrame deviceFrame;

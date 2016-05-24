@@ -60,7 +60,7 @@ void ofApp::setup() {
 
 			{
 				ofFloatPixels depthToWorldTable;
-				kinect.getDepthSource()->getDepthToWorldTable(depthToWorldTable);
+				kinect->getDepthSource()->getDepthToWorldTable(depthToWorldTable);
 				ofxSquashBuddies::Message message;
 				message.setData(depthToWorldTable);
 				const auto & saveString = message.getMessageString();
@@ -85,19 +85,20 @@ void ofApp::setup() {
 		auto port = 5000;
 
 		//initialise the Kinect
-		this->kinect.open();
-		//this->kinect.initColorSource();
-		this->kinect.initDepthSource();
-		this->kinect.initInfraredSource();
-		this->kinect.initBodyIndexSource();
-		this->kinect.initBodySource();
+		this->kinect = make_shared<ofxKinectForWindows2::Device>();
+		this->kinect->open();
+		//this->kinect->initColorSource();
+		this->kinect->initDepthSource();
+		this->kinect->initInfraredSource();
+		this->kinect->initBodyIndexSource();
+		this->kinect->initBodySource();
 
 		//initialise the ofxMultiTrack::Sender
 		this->publisher.init(this->kinect, port);
 
 		//build the gui
 		ofSetWindowTitle("Publishing on : " + ofToString(port));
-		auto sources = this->kinect.getSources();
+		auto sources = this->kinect->getSources();
 		for (auto source : sources) {
 			auto imageSource = dynamic_pointer_cast<ofBaseHasTexture>(source);
 			if (imageSource) {
@@ -124,12 +125,12 @@ void ofApp::setup() {
 void ofApp::setGuiMinimised(bool minimised) {
 	this->guiMinimised = minimised;
 	if (minimised) {
-		this->kinect.setUseTextures(false);
+		this->kinect->setUseTextures(false);
 		this->guiController->setRootGroup(this->smallGui);
 		ofSetWindowShape(300, 500);
 	}
 	else {
-		this->kinect.setUseTextures(true);
+		this->kinect->setUseTextures(true);
 		this->guiController->setRootGroup(this->bigGui);
 		ofSetWindowShape(640 * 3, 480 * 2);
 	}
@@ -137,7 +138,7 @@ void ofApp::setGuiMinimised(bool minimised) {
 
 //--------------------------------------------------------------
 void ofApp::update(){
-	this->kinect.update();
+	this->kinect->update();
 	this->droppedFrame = ! this->publisher.update();
 }
 

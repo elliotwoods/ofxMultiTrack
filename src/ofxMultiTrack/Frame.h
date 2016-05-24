@@ -62,7 +62,7 @@ namespace ofxMultiTrack {
 			size_t size;
 		};
 
-		void init(ofxKinectForWindows2::Device &);
+		void init(shared_ptr<ofxKinectForWindows2::Device>);
 		void copyFromKinect();
 
 		const ofxSquashBuddies::Message & getMessage() const;

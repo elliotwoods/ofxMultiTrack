@@ -295,7 +295,7 @@ namespace ofxMultiTrack {
 	}
 
 	//----------
-	void DeviceFrame::init(ofxKinectForWindows2::Device & device) {
+	void DeviceFrame::init(shared_ptr<ofxKinectForWindows2::Device> device) {
 		//--
 		// Declare the streams
 		//--
@@ -305,7 +305,7 @@ namespace ofxMultiTrack {
 		{
 			//color
 			{
-				auto source = device.getColorSource();
+				auto source = device->getColorSource();
 				if (source) {
 					source->setYuvPixelsEnabled(true);
 					auto dataType = Header::MultiTrack_2_3_Frame::Color;
@@ -329,7 +329,7 @@ namespace ofxMultiTrack {
 
 			//depth
 			{
-				auto source = device.getDepthSource();
+				auto source = device->getDepthSource();
 				if (source) {
 					auto dataType = Header::MultiTrack_2_3_Frame::Depth;
 					dataAvailable |= dataType;
@@ -352,7 +352,7 @@ namespace ofxMultiTrack {
 
 			//infrared
 			{
-				auto source = device.getInfraredSource();
+				auto source = device->getInfraredSource();
 				if (source) {
 					auto dataType = Header::MultiTrack_2_3_Frame::Infrared;
 					dataAvailable |= dataType;
@@ -375,7 +375,7 @@ namespace ofxMultiTrack {
 
 			//body index
 			{
-				auto source = device.getBodyIndexSource();
+				auto source = device->getBodyIndexSource();
 				if (source) {
 					auto dataType = Header::MultiTrack_2_3_Frame::BodyIndex;
 					dataAvailable |= dataType;
@@ -398,8 +398,8 @@ namespace ofxMultiTrack {
 
 			//color coord in depth view
 			{
-				auto depthSource = device.getDepthSource();
-				auto colorSource = device.getColorSource();
+				auto depthSource = device->getDepthSource();
+				auto colorSource = device->getColorSource();
 				if (depthSource && colorSource) {
 					auto dataType = Header::MultiTrack_2_3_Frame::ColorCoordInDepthView;
 					dataAvailable |= dataType;
@@ -422,7 +422,7 @@ namespace ofxMultiTrack {
 
 			//bodies
 			{
-				auto source = device.getBodySource();
+				auto source = device->getBodySource();
 				if (source) {
 					auto dataType = Header::MultiTrack_2_3_Frame::Bodies;
 					dataAvailable |= dataType;

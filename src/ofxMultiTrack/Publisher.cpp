@@ -4,11 +4,11 @@ using namespace ofxSquashBuddies;
 
 namespace ofxMultiTrack {
 	//----------
-	void Publisher::init(ofxKinectForWindows2::Device & kinect, int port) {
-		this->kinect = & kinect;
+	void Publisher::init(shared_ptr<ofxKinectForWindows2::Device> kinect, int port) {
+		this->kinect = kinect;
 
 		this->publisher.init(port);
-		this->deviceFrame.init(* this->kinect);
+		this->deviceFrame.init(this->kinect);
 	}
 
 	//----------
@@ -35,8 +35,8 @@ namespace ofxMultiTrack {
 	}
 
 	//----------
-	ofxKinectForWindows2::Device & Publisher::getKinect() {
-		return * this->kinect;
+	shared_ptr<ofxKinectForWindows2::Device> Publisher::getKinect() {
+		return this->kinect;
 	}
 
 	//----------
