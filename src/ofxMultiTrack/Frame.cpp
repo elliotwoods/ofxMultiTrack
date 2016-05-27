@@ -332,27 +332,28 @@ namespace ofxMultiTrack {
 				auto source = device->getColorSource();
 				if (source) {
 					if (dataAvailable & Header::MultiTrack_2_3_Frame::DataAvailable::Color) {
-						ofLogWarning("DeviceFrame::init") << "Color already coming in from Grabber, disable Kinect color!";
+						ofLogWarning("DeviceFrame::init") << "Color already coming in from Grabber, skipping Kinect color!";
 					}
+					else {
+						source->setYuvPixelsEnabled(true);
+						auto dataType = Header::MultiTrack_2_3_Frame::Color;
+						dataAvailable |= dataType;
 
-					source->setYuvPixelsEnabled(true);
-					auto dataType = Header::MultiTrack_2_3_Frame::Color;
-					dataAvailable |= dataType;
-
-					Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
-						MULTITRACK_FRAME_COLOR_WIDTH,
-						MULTITRACK_FRAME_COLOR_HEIGHT,
-						Header::MultiTrack_2_3_Frame::PixelFormat::YUY2_8
-					};
-					Stream stream = {
-						dataType,
-						frameSettings,
-						source,
-						0,
-						frameSettings.size()
-					};
-					stream.source = source;
-					this->streams.push_back(stream);
+						Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+							MULTITRACK_FRAME_COLOR_WIDTH,
+							MULTITRACK_FRAME_COLOR_HEIGHT,
+							Header::MultiTrack_2_3_Frame::PixelFormat::YUY2_8
+						};
+						Stream stream = {
+							dataType,
+							frameSettings,
+							source,
+							0,
+							frameSettings.size()
+						};
+						stream.source = source;
+						this->streams.push_back(stream);
+					}
 				}
 			}
 
