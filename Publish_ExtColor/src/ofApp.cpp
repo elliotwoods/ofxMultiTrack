@@ -99,11 +99,11 @@ void ofApp::setup() {
 	{
 		this->kinect = make_shared<ofxKinectForWindows2::Device>();
 		this->kinect->open();
-		//this->kinect->initColorSource();
+		this->kinect->initColorSource();
 		this->kinect->initDepthSource();
-		//this->kinect->initInfraredSource();
-		//this->kinect->initBodyIndexSource();
-		//this->kinect->initBodySource();
+		this->kinect->initInfraredSource();
+		this->kinect->initBodyIndexSource();
+		this->kinect->initBodySource();
 	}
 
 	//setup sender
