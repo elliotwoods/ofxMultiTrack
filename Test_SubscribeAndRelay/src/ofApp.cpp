@@ -12,7 +12,7 @@ void ofApp::setup() {
 	widgets->addTitle("MultiTrack Subscribe");
 	widgets->addFps();
 	widgets->addMemoryUsage();
-	widgets->addIndicator("Frame incoming", [this]() {
+	widgets->addIndicatorBool("Frame incoming", [this]() {
 		return this->newFrame;
 	});
 	widgets->addLiveValueHistory("Receiver incoming frame rate", [this]() {
