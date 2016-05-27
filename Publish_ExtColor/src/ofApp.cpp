@@ -102,8 +102,8 @@ void ofApp::setup() {
 		//this->kinect->initColorSource();
 		this->kinect->initDepthSource();
 		//this->kinect->initInfraredSource();
-		this->kinect->initBodyIndexSource();
-		this->kinect->initBodySource();
+		//this->kinect->initBodyIndexSource();
+		//this->kinect->initBodySource();
 	}
 
 	//setup sender
