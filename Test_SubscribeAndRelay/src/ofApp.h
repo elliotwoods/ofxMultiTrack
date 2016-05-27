@@ -45,6 +45,7 @@ class ofApp : public ofBaseApp{
 		Texture colorCoordInDepthFrame;
 
 		ofFloatPixels depthToWorldTable;
+		ofParameter<bool> externalColor{ "External Color", false };
 
 		int clientIndex = 0;
 		bool newFrame = false;
