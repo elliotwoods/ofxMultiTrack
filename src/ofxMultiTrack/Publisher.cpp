@@ -6,19 +6,9 @@ namespace ofxMultiTrack {
 	//----------
 	void Publisher::init(shared_ptr<ofxKinectForWindows2::Device> kinect, int port) {
 		this->kinect = kinect;
-		this->grabber.reset();
 
 		this->publisher.init(port);
 		this->deviceFrame.init(this->kinect);
-	}
-
-	//----------
-	void Publisher::init(shared_ptr<ofxKinectForWindows2::Device> kinect, shared_ptr<ofxMachineVision::Grabber::Simple> grabber, int port) {
-		this->kinect = kinect;
-		this->grabber = grabber;
-
-		this->publisher.init(port);
-		this->deviceFrame.init(this->kinect, this->grabber);
 	}
 
 	//----------
@@ -37,29 +27,12 @@ namespace ofxMultiTrack {
 				this->kinectFrameRateCounter.addFrame();
 
 				this->deviceFrame.copyFromKinect();
-				isFrameNew = true;
-			}
-		}
 
-		//update grabber, if required
-		if (this->grabber)
-		{
-			this->grabberFrameRateCounter.update();
+				auto sentSuccess = this->publisher.send(this->deviceFrame.getMessage());
 
-			if (this->grabber->isFrameNew()) {
-				this->grabberFrameRateCounter.addFrame();
-
-				this->deviceFrame.copyFromGrabber();
-				isFrameNew = true;
-			}
-		}
-		
-		//send frame if new
-		if (isFrameNew) {
-			auto sentSuccess = this->publisher.send(this->deviceFrame.getMessage());
-
-			if (!sentSuccess) {
-				return false;
+				if (!sentSuccess) {
+					return false;
+				}
 			}
 		}
 
@@ -72,11 +45,6 @@ namespace ofxMultiTrack {
 	}
 
 	//----------
-	shared_ptr<ofxMachineVision::Grabber::Simple> Publisher::getGrabber() {
-		return this->grabber;
-	}
-
-	//----------
 	ofxSquashBuddies::Publisher & Publisher::getPublisher() {
 		return this->publisher;
 	}
@@ -86,8 +54,71 @@ namespace ofxMultiTrack {
 		return this->kinectFrameRateCounter.getFrameRate();
 	}
 
+#pragma mark PublisherExtColor
 	//----------
-	float Publisher::getGrabberFrameRate() const {
+	void PublisherExtColor::init(shared_ptr<ofxKinectForWindows2::Device> kinect, shared_ptr<ofxMachineVision::Grabber::Simple> grabber, int port) {
+		this->kinect = kinect;
+		this->grabber = grabber;
+
+		this->publisher.init(port);
+		this->comboFrame.init(this->kinect, this->grabber);
+	}
+
+	//----------
+	bool PublisherExtColor::update() {
+		if (!this->kinect) {
+			ofLogWarning("ofxMultiTrack::PublisherExtColor") << "Cannot update Publisher until you initialise with a valid Kinect";
+		}
+		if (!this->grabber) {
+			ofLogWarning("ofxMultiTrack::PublisherExtColor") << "Cannot update Publisher until you initialise with a valid Grabber";
+		}
+
+		auto isFrameNew = false;
+
+		//update Kinect
+		{
+			this->kinectFrameRateCounter.update();
+
+			if (this->kinect->isFrameNew()) {
+				this->kinectFrameRateCounter.addFrame();
+
+				this->comboFrame.copyFromKinect();
+				isFrameNew = true;
+			}
+		}
+
+		//update grabber, if required
+		if (this->grabber)
+		{
+			this->grabberFrameRateCounter.update();
+
+			if (this->grabber->isFrameNew()) {
+				this->grabberFrameRateCounter.addFrame();
+
+				this->comboFrame.copyFromGrabber();
+				isFrameNew = true;
+			}
+		}
+
+		//send frame if new
+		if (isFrameNew) {
+			auto sentSuccess = this->publisher.send(this->comboFrame.getMessage());
+
+			if (!sentSuccess) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	//----------
+	shared_ptr<ofxMachineVision::Grabber::Simple> PublisherExtColor::getGrabber() {
+		return this->grabber;
+	}
+
+	//----------
+	float PublisherExtColor::getGrabberFrameRate() const {
 		return this->grabberFrameRateCounter.getFrameRate();
 	}
 }

@@ -10,24 +10,36 @@ namespace ofxMultiTrack {
 	class Publisher {
 	public:
 		void init(shared_ptr<ofxKinectForWindows2::Device>, int port);
-		void init(shared_ptr<ofxKinectForWindows2::Device>, shared_ptr<ofxMachineVision::Grabber::Simple>, int port);
-		bool update(); // return false if dropped a frame
+		virtual bool update(); // return false if dropped a frame
 
 		shared_ptr<ofxKinectForWindows2::Device> getKinect();
-		shared_ptr<ofxMachineVision::Grabber::Simple> getGrabber();
 		ofxSquashBuddies::Publisher & getPublisher();
 
 		float getDeviceFrameRate() const;
-		float getGrabberFrameRate() const;
 
 	protected:
 		shared_ptr<ofxKinectForWindows2::Device> kinect;
-		shared_ptr<ofxMachineVision::Grabber::Simple> grabber;
 
 		ofxSquashBuddies::Publisher publisher;
 		DeviceFrame deviceFrame;
 
 		ofxSquashBuddies::Utils::FramerateCounter kinectFrameRateCounter;
+	};
+
+	class PublisherExtColor : public Publisher {
+	public:
+		void init(shared_ptr<ofxKinectForWindows2::Device>, shared_ptr<ofxMachineVision::Grabber::Simple>, int port);
+		virtual bool update() override;
+
+		shared_ptr<ofxMachineVision::Grabber::Simple> getGrabber();
+
+		float getGrabberFrameRate() const;
+
+	protected:
+		shared_ptr<ofxMachineVision::Grabber::Simple> grabber;
+
+		ComboFrame comboFrame;
+
 		ofxSquashBuddies::Utils::FramerateCounter grabberFrameRateCounter;
 	};
 }

@@ -75,10 +75,10 @@ namespace ofxMultiTrack {
 				streams[Header::MultiTrack_2_3_Frame::ColorCoordInDepthView] = frameSettings;
 			}
 			if (!this->bodies.empty()) {
-					Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
-					0,
-					0,
-					Header::MultiTrack_2_3_Frame::PixelFormat::Unknown
+				Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+				0,
+				0,
+				Header::MultiTrack_2_3_Frame::PixelFormat::Unknown
 				};
 				streams[Header::MultiTrack_2_3_Frame::Bodies] = frameSettings;
 			}
@@ -123,7 +123,7 @@ namespace ofxMultiTrack {
 		// Write the message
 		//--
 		//
-		auto bodyDataPosition = (uint8_t *) message.getBodyData();
+		auto bodyDataPosition = (uint8_t *)message.getBodyData();
 		for (const auto & stream : streams) {
 
 			//write the image
@@ -189,7 +189,8 @@ namespace ofxMultiTrack {
 			}
 
 			return true;
-		} else {
+		}
+		else {
 			return false;
 		}
 	}
@@ -267,9 +268,9 @@ namespace ofxMultiTrack {
 			writeAndMove(data, (uint8_t)joints.size());
 
 			for (const auto & joint : joints) {
-				writeAndMove(data, (_Joint) joint.second.getRawJoint());
-				writeAndMove(data, (_JointOrientation) joint.second.getRawJointOrientation());
-				writeAndMove(data, (ofVec2f) joint.second.getPositionInDepthMap());
+				writeAndMove(data, (_Joint)joint.second.getRawJoint());
+				writeAndMove(data, (_JointOrientation)joint.second.getRawJointOrientation());
+				writeAndMove(data, (ofVec2f)joint.second.getPositionInDepthMap());
 			}
 		}
 
@@ -295,31 +296,8 @@ namespace ofxMultiTrack {
 	}
 
 	//----------
-	void DeviceFrame::init(shared_ptr<ofxKinectForWindows2::Device> device, shared_ptr<ofxMachineVision::Grabber::Simple> grabber) {
+	void DeviceFrame::init(shared_ptr<ofxKinectForWindows2::Device> device) {
 		int dataAvailable = 0;
-
-		//--
-		// Declare the external image first, if any
-		//--
-		//
-		this->grabber = grabber;
-		if (this->grabber) {
-			auto dataType = Header::MultiTrack_2_3_Frame::Color;
-			dataAvailable |= dataType;
-
-			Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
-				MULTITRACK_FRAME_EXT_COLOR_WIDTH,
-				MULTITRACK_FRAME_EXT_COLOR_HEIGHT,
-				Header::MultiTrack_2_3_Frame::PixelFormat::RGB_8
-			};
-			this->extStream = {
-				dataType,
-				frameSettings,
-				nullptr,
-				0,
-				frameSettings.size()
-			};
-		}
 
 		//--
 		// Declare the streams
@@ -329,32 +307,7 @@ namespace ofxMultiTrack {
 		{
 			//color
 			{
-				auto source = device->getColorSource();
-				if (source) {
-					if (dataAvailable & Header::MultiTrack_2_3_Frame::DataAvailable::Color) {
-						ofLogWarning("DeviceFrame::init") << "Color already coming in from Grabber, skipping Kinect color!";
-					}
-					else {
-						source->setYuvPixelsEnabled(true);
-						auto dataType = Header::MultiTrack_2_3_Frame::Color;
-						dataAvailable |= dataType;
-
-						Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
-							MULTITRACK_FRAME_COLOR_WIDTH,
-							MULTITRACK_FRAME_COLOR_HEIGHT,
-							Header::MultiTrack_2_3_Frame::PixelFormat::YUY2_8
-						};
-						Stream stream = {
-							dataType,
-							frameSettings,
-							source,
-							0,
-							frameSettings.size()
-						};
-						stream.source = source;
-						this->streams.push_back(stream);
-					}
-				}
+				this->initColor(device, dataAvailable);
 			}
 
 			//depth
@@ -428,26 +381,7 @@ namespace ofxMultiTrack {
 
 			//color coord in depth view
 			{
-				auto depthSource = device->getDepthSource();
-				auto colorSource = device->getColorSource();
-				if (depthSource && colorSource) {
-					auto dataType = Header::MultiTrack_2_3_Frame::ColorCoordInDepthView;
-					dataAvailable |= dataType;
-
-					Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
-						512,
-						424,
-						Header::MultiTrack_2_3_Frame::PixelFormat::RG_16
-					};
-					Stream stream = {
-						dataType,
-						frameSettings,
-						depthSource,
-						0,
-						frameSettings.size(),
-					};
-					this->streams.push_back(stream);
-				}
+				this->initColorCoordInDepthView(device, dataAvailable);
 			}
 
 			//bodies
@@ -480,11 +414,6 @@ namespace ofxMultiTrack {
 		//calculate the body size
 		size_t bodySize = 0;
 		{
-			if (this->extStream.size) {
-				bodySize += sizeof(Header::MultiTrack_2_3_Frame::FrameSettings);
-				bodySize += this->extStream.size;
-			}
-
 			for (const auto & stream : this->streams) {
 				if (stream.dataType != Header::MultiTrack_2_3_Frame::DataType::Bodies) {
 					//all image sources also need a header for the image as well as the data
@@ -508,11 +437,6 @@ namespace ofxMultiTrack {
 		//this means that the memory is allocated in Message but can be accessed from each pixels
 		{
 			auto messageBodyPosition = (uint8_t*)this->message.getBodyData();
-
-			if (this->extStream.size) {
-				this->extStream.data = messageBodyPosition;
-				entanglePixelsWithMessage(this->color, this->extStream, messageBodyPosition);
-			}
 
 			for (auto & stream : this->streams) {
 				stream.data = messageBodyPosition;
@@ -538,6 +462,57 @@ namespace ofxMultiTrack {
 				}
 			}
 
+		}
+	}
+
+	//----------
+	void DeviceFrame::initColor(shared_ptr<ofxKinectForWindows2::Device> device, int & dataAvailable) {
+		//use device color
+		auto source = device->getColorSource();
+		if (source) {
+			source->setYuvPixelsEnabled(true);
+			auto dataType = Header::MultiTrack_2_3_Frame::Color;
+			dataAvailable |= dataType;
+
+			Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+				MULTITRACK_FRAME_COLOR_WIDTH,
+				MULTITRACK_FRAME_COLOR_HEIGHT,
+				Header::MultiTrack_2_3_Frame::PixelFormat::YUY2_8
+			};
+			Stream stream = {
+				dataType,
+				frameSettings,
+				source,
+				0,
+				frameSettings.size()
+			};
+			stream.source = source;
+			this->streams.push_back(stream);
+		}
+	}
+
+	//----------
+	void DeviceFrame::initColorCoordInDepthView(shared_ptr<ofxKinectForWindows2::Device> device, int & dataAvailable) {
+		//use device color
+		auto depthSource = device->getDepthSource();
+		auto colorSource = device->getColorSource();
+		if (depthSource && colorSource) {
+			auto dataType = Header::MultiTrack_2_3_Frame::ColorCoordInDepthView;
+			dataAvailable |= dataType;
+
+			Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+				512,
+				424,
+				Header::MultiTrack_2_3_Frame::PixelFormat::RG_16
+			};
+			Stream stream = {
+				dataType,
+				frameSettings,
+				depthSource,
+				0,
+				frameSettings.size(),
+			};
+			this->streams.push_back(stream);
 		}
 	}
 
@@ -617,8 +592,8 @@ namespace ofxMultiTrack {
 					float heightScale = float(MULTITRACK_FRAME_COLOR_HEIGHT) / 1080.0f;
 
 					for (int i = 0; i < 512 * 424; i++) {
-						*out++ = (uint16_t) (*in++ * widthScale);
-						*out++ = (uint16_t) (*in++ * heightScale);
+						*out++ = (uint16_t)(*in++ * widthScale);
+						*out++ = (uint16_t)(*in++ * heightScale);
 					}
 				}
 				break;
@@ -640,32 +615,156 @@ namespace ofxMultiTrack {
 	}
 
 	//----------
-	void DeviceFrame::copyFromGrabber() {
-		if (this->grabber && this->extStream.size) {
-			const auto & inputPixels = this->grabber->getPixels();
-			if (inputPixels.isAllocated()) {
-				const auto inputWidth = inputPixels.getWidth();
-				const auto inputHeight = inputPixels.getHeight();
-				const auto outputWidth = this->extStream.frameSettings.width;
-				const auto outputHeight = this->extStream.frameSettings.height;
+	const ofxSquashBuddies::Message & DeviceFrame::getMessage() const {
+		return this->message;
+	}
 
-				if (outputWidth == inputWidth && outputHeight == inputHeight) {
-					//copy if dimensions are the same
-					this->color = inputPixels;
+#pragma mark ComboFrame
+	//----------
+	void ComboFrame::init(shared_ptr<ofxKinectForWindows2::Device> device, shared_ptr<ofxMachineVision::Grabber::Simple> grabber) {
+		this->grabber = grabber;
+
+		DeviceFrame::init(device);
+	}
+
+	//----------
+	void ComboFrame::initColor(shared_ptr<ofxKinectForWindows2::Device> device, int & dataAvailable) {
+		//use external color
+		if (this->grabber) {
+			auto dataType = Header::MultiTrack_2_3_Frame::Color;
+			dataAvailable |= dataType;
+
+			Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+				MULTITRACK_FRAME_EXT_COLOR_WIDTH,
+				MULTITRACK_FRAME_EXT_COLOR_HEIGHT,
+				Header::MultiTrack_2_3_Frame::PixelFormat::RGB_8
+			};
+			Stream stream = {
+				dataType,
+				frameSettings,
+				nullptr,
+				0,
+				frameSettings.size()
+			};
+			this->streams.push_back(stream);
+		}
+	}
+
+	//----------
+	void ComboFrame::initColorCoordInDepthView(shared_ptr<ofxKinectForWindows2::Device> device, int & dataAvailable) {
+		//use external color
+		auto depthSource = device->getDepthSource();
+		if (depthSource && this->grabber) {
+			auto dataType = Header::MultiTrack_2_3_Frame::ColorCoordInDepthView;
+			dataAvailable |= dataType;
+
+			Header::MultiTrack_2_3_Frame::FrameSettings frameSettings = {
+				512,
+				424,
+				Header::MultiTrack_2_3_Frame::PixelFormat::RG_16
+			};
+			Stream stream = {
+				dataType,
+				frameSettings,
+				depthSource,
+				0,
+				frameSettings.size(),
+			};
+			this->streams.push_back(stream);
+		}
+	}
+
+	//----------
+	void ComboFrame::copyFromKinect() {
+		//for each active stream, copy from the device source to the local pixels object
+		for (auto & stream : this->streams) {
+			switch (stream.dataType) {
+			case Header::MultiTrack_2_3_Frame::Depth:
+			{
+				copyImageStream(this->depth, stream);
+				break;
+			}
+			case Header::MultiTrack_2_3_Frame::Infrared:
+			{
+				copyImageStream(this->infrared, stream);
+				break;
+			}
+			case Header::MultiTrack_2_3_Frame::BodyIndex:
+			{
+				copyImageStream(this->bodyIndex, stream);
+				break;
+			}
+			case Header::MultiTrack_2_3_Frame::Bodies:
+			{
+				auto source = dynamic_pointer_cast<Source::Body>(stream.source);
+				if (source) {
+					auto data = (uint8_t*)stream.data;
+					auto bodies = source->getBodies();
+					data = Frame::writeBodiesToData(data, bodies);
 				}
-				else {
-					//resample if dimensions are different
-					if (!this->color.isAllocated()) {
-						this->color.allocate(outputWidth, outputHeight, Header::MultiTrack_2_3_Frame::toOf(this->extStream.frameSettings.pixelFormat));
-					}
-					inputPixels.resizeTo(this->color);
-				}
+				break;
+			}
+			//skip Color and ColorCoordInDepthView, we'll get that from the grabber
+			case Header::MultiTrack_2_3_Frame::Color:
+			case Header::MultiTrack_2_3_Frame::ColorCoordInDepthView:
+			default:
+				break;
 			}
 		}
 	}
 
 	//----------
-	const ofxSquashBuddies::Message & DeviceFrame::getMessage() const {
-		return this->message;
+	void ComboFrame::copyFromGrabber() {
+		//for each active stream, copy from the grabber source to the local pixels object
+		for (auto & stream : this->streams) {
+			switch (stream.dataType) {
+			case Header::MultiTrack_2_3_Frame::Color:
+			{
+				if (this->grabber) {
+					const auto & inputPixels = this->grabber->getPixels();
+					if (inputPixels.isAllocated()) {
+						const auto inputWidth = inputPixels.getWidth();
+						const auto inputHeight = inputPixels.getHeight();
+						const auto outputWidth = stream.frameSettings.width;
+						const auto outputHeight = stream.frameSettings.height;
+
+						if (outputWidth == inputWidth && outputHeight == inputHeight) {
+							//copy if dimensions are the same
+							this->color = inputPixels;
+						}
+						else {
+							//resample if dimensions are different
+							if (!this->color.isAllocated()) {
+								this->color.allocate(outputWidth, outputHeight, Header::MultiTrack_2_3_Frame::toOf(stream.frameSettings.pixelFormat));
+							}
+							inputPixels.resizeTo(this->color);
+						}
+					}
+				}
+				break;
+			}
+
+			//case Header::MultiTrack_2_3_Frame::ColorCoordInDepthView:
+			//{
+			//	auto depthSource = dynamic_pointer_cast<Source::Depth>(stream.source);
+			//	if (depthSource) {
+			//		depthSource->getColorInDepthFrameMapping(this->colorCoordInDepthFrameFloat);
+			//		auto in = this->colorCoordInDepthFrameFloat.getData();
+			//		auto out = this->colorCoordInDepthFrame.getData();
+			//		float widthScale = float(MULTITRACK_FRAME_COLOR_WIDTH) / 1920.0f;
+			//		float heightScale = float(MULTITRACK_FRAME_COLOR_HEIGHT) / 1080.0f;
+
+			//		for (int i = 0; i < 512 * 424; i++) {
+			//			*out++ = (uint16_t)(*in++ * widthScale);
+			//			*out++ = (uint16_t)(*in++ * heightScale);
+			//		}
+			//	}
+			//	break;
+			//}
+
+			default:
+				break;
+			}
+		}
 	}
 }

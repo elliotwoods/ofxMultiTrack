@@ -66,17 +66,27 @@ namespace ofxMultiTrack {
 			size_t size;
 		};
 
-		void init(shared_ptr<ofxKinectForWindows2::Device>, shared_ptr<ofxMachineVision::Grabber::Simple> = nullptr);
-		void copyFromKinect();
-		void copyFromGrabber();
+		void init(shared_ptr<ofxKinectForWindows2::Device>);
+		virtual void initColor(shared_ptr<ofxKinectForWindows2::Device>, int &);  // Color is special because it can be external
+		virtual void initColorCoordInDepthView(shared_ptr<ofxKinectForWindows2::Device>, int &);
+		virtual void copyFromKinect();
 
 		const ofxSquashBuddies::Message & getMessage() const;
 	protected:
 		ofxSquashBuddies::Message message;
 		vector<Stream> streams;
-		shared_ptr<ofxMachineVision::Grabber::Simple> grabber;
-		Stream extStream;
 	private:
 		ofFloatPixels colorCoordInDepthFrameFloat;
+	};
+
+	class ComboFrame : public DeviceFrame {
+	public:
+		void init(shared_ptr<ofxKinectForWindows2::Device>, shared_ptr<ofxMachineVision::Grabber::Simple>);
+		virtual void initColor(shared_ptr<ofxKinectForWindows2::Device>, int &) override;
+		virtual void initColorCoordInDepthView(shared_ptr<ofxKinectForWindows2::Device>, int &) override;
+		virtual void copyFromKinect() override;
+		void copyFromGrabber();
+	protected:
+		shared_ptr<ofxMachineVision::Grabber::Simple> grabber;
 	};
 }
