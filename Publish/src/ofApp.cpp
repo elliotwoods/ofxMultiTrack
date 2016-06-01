@@ -93,7 +93,7 @@ void ofApp::setup() {
 		this->kinect->initBodyIndexSource();
 		this->kinect->initBodySource();
 
-		//initialise the ofxMultiTrack::Sender
+		//initialise the ofxMultiTrack::Publisher
 		this->publisher.init(this->kinect, port);
 
 		//build the gui

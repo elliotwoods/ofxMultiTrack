@@ -99,7 +99,7 @@ void ofApp::setup() {
 	{
 		this->kinect = make_shared<ofxKinectForWindows2::Device>();
 		this->kinect->open();
-		this->kinect->initColorSource();
+		//this->kinect->initColorSource();
 		this->kinect->initDepthSource();
 		this->kinect->initInfraredSource();
 		this->kinect->initBodyIndexSource();
@@ -110,7 +110,7 @@ void ofApp::setup() {
 	{
 		auto port = 5000;
 
-		//initialise the ofxMultiTrack::Sender
+		//initialise the ofxMultiTrack::Publisher
 		this->publisher.init(this->kinect, this->grabber, port);
 
 		ofSetWindowTitle("Publishing on : " + ofToString(port));
@@ -119,7 +119,7 @@ void ofApp::setup() {
 	//build the gui
 	{
 		//grabber panel
-		auto panel = ofxCvGui::Panels::makeBaseDraws(*this->grabber.get(), this->grabber->getDeviceTypeName());
+		auto panel = ofxCvGui::Panels::makeTexture(this->grabber->getTexture(), this->grabber->getDeviceTypeName());
 		this->gui.add(panel);
 
 		//Kinect panels

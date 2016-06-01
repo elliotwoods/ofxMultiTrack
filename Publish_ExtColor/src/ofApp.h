@@ -40,7 +40,7 @@ class ofApp : public ofBaseApp{
 
 		shared_ptr<ofxKinectForWindows2::Device> kinect;
 		shared_ptr<ofxMachineVision::Grabber::Simple> grabber;
-		ofxMultiTrack::Publisher publisher;
+		ofxMultiTrack::PublisherExtColor publisher;
 
 		bool droppedFrame = false;
 };
