@@ -31,6 +31,8 @@ namespace ofxMultiTrack {
 		void init(shared_ptr<ofxKinectForWindows2::Device>, shared_ptr<ofxMachineVision::Grabber::Simple>, int port);
 		virtual bool update() override;
 
+		void setCameraParams(const vector<float> & distortion, const ofMatrix4x4 & view, const ofMatrix4x4 & projection);
+
 		shared_ptr<ofxMachineVision::Grabber::Simple> getGrabber();
 
 		float getGrabberFrameRate() const;

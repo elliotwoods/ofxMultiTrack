@@ -69,6 +69,7 @@ namespace ofxMultiTrack {
 		void init(shared_ptr<ofxKinectForWindows2::Device>);
 		virtual void initColor(shared_ptr<ofxKinectForWindows2::Device>, int &);  // Color is special because it can be external
 		virtual void initColorCoordInDepthView(shared_ptr<ofxKinectForWindows2::Device>, int &);
+
 		virtual void copyFromKinect();
 
 		const ofxSquashBuddies::Message & getMessage() const;
@@ -84,9 +85,18 @@ namespace ofxMultiTrack {
 		void init(shared_ptr<ofxKinectForWindows2::Device>, shared_ptr<ofxMachineVision::Grabber::Simple>);
 		virtual void initColor(shared_ptr<ofxKinectForWindows2::Device>, int &) override;
 		virtual void initColorCoordInDepthView(shared_ptr<ofxKinectForWindows2::Device>, int &) override;
+		
+		void setCameraParams(const vector<float> & distortion, const ofMatrix4x4 & view, const ofMatrix4x4 & projection);
+
 		virtual void copyFromKinect() override;
 		void copyFromGrabber();
 	protected:
+		ofVec2f getUndistorted(const ofVec2f & point);
+
 		shared_ptr<ofxMachineVision::Grabber::Simple> grabber;
+
+		ofFloatPixels depthToWorldTable;
+		vector<float> distortion;
+		ofMatrix4x4 viewProjection;
 	};
 }

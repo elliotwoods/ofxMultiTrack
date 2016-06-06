@@ -675,6 +675,12 @@ namespace ofxMultiTrack {
 	}
 
 	//----------
+	void ComboFrame::setCameraParams(const vector<float> & distortion, const ofMatrix4x4 & view, const ofMatrix4x4 & projection) {
+		this->distortion = distortion;
+		this->viewProjection = view * projection;
+	}
+
+	//----------
 	void ComboFrame::copyFromKinect() {
 		//for each active stream, copy from the device source to the local pixels object
 		for (auto & stream : this->streams) {
@@ -744,27 +750,82 @@ namespace ofxMultiTrack {
 				break;
 			}
 
-			//case Header::MultiTrack_2_3_Frame::ColorCoordInDepthView:
-			//{
-			//	auto depthSource = dynamic_pointer_cast<Source::Depth>(stream.source);
-			//	if (depthSource) {
-			//		depthSource->getColorInDepthFrameMapping(this->colorCoordInDepthFrameFloat);
-			//		auto in = this->colorCoordInDepthFrameFloat.getData();
-			//		auto out = this->colorCoordInDepthFrame.getData();
-			//		float widthScale = float(MULTITRACK_FRAME_COLOR_WIDTH) / 1920.0f;
-			//		float heightScale = float(MULTITRACK_FRAME_COLOR_HEIGHT) / 1080.0f;
+			case Header::MultiTrack_2_3_Frame::ColorCoordInDepthView:
+			{
+				auto depthSource = dynamic_pointer_cast<Source::Depth>(stream.source);
+				if (depthSource) {
+					if (!this->depthToWorldTable.isAllocated()) {
+						//load the depth to world table
+						depthSource->getDepthToWorldTable(this->depthToWorldTable);
+					}
 
-			//		for (int i = 0; i < 512 * 424; i++) {
-			//			*out++ = (uint16_t)(*in++ * widthScale);
-			//			*out++ = (uint16_t)(*in++ * heightScale);
-			//		}
-			//	}
-			//	break;
-			//}
+					if (this->depthToWorldTable.isAllocated()) {
+						auto depthPixel = depthSource->getPixels().getData();
+						auto depthToWorldRay = (ofVec2f *)this->depthToWorldTable.getData();
+
+						this->colorCoordInDepthFrame.set(0);
+						auto colorToDepthData = this->colorCoordInDepthFrame.getData();
+
+						//map the depth to color for each pixel
+						const auto size = depthSource->getWidth() * depthSource->getHeight();
+						for (int i = 0; i < size; ++i) {
+							auto z = (float)*depthPixel / 1000.0f;
+
+							ofVec3f vertex{
+								depthToWorldRay->x * z,
+								depthToWorldRay->y * z,
+								z
+							};
+
+							if (z > 0.1) {
+								auto colorPos = vertex * this->viewProjection;
+								//cout << "Depth point " << i << " has color pos " << colorPos << endl;
+								if (this->distortion.size() >= 4) {
+									colorPos = this->getUndistorted(colorPos / 2.0f) * 2.0f;
+								}
+								auto colorX = (int)((1.0f + colorPos.x) / 2.0f * MULTITRACK_FRAME_EXT_COLOR_WIDTH);
+								auto colorY = (int)((1.0f - colorPos.y) / 2.0f * MULTITRACK_FRAME_EXT_COLOR_HEIGHT);
+
+								if (colorX >= 0 && colorX < MULTITRACK_FRAME_EXT_COLOR_WIDTH && colorY >= 0 && colorY < MULTITRACK_FRAME_EXT_COLOR_HEIGHT) {
+									colorToDepthData[i * 2 + 0] = (uint16_t)colorX;
+									colorToDepthData[i * 2 + 1] = (uint16_t)colorY;
+								}
+								else {
+									colorToDepthData[i * 2 + 0] = 0;
+									colorToDepthData[i * 2 + 1] = 0;
+								}
+							}
+							else {
+								colorToDepthData[i * 2 + 0] = 0;
+								colorToDepthData[i * 2 + 1] = 0;
+							}
+
+							depthPixel++;
+							depthToWorldRay++;
+						}
+					}
+				}
+				break;
+			}
 
 			default:
 				break;
 			}
 		}
+	}
+
+	//--------------------------------------------------------------
+	ofVec2f ComboFrame::getUndistorted(const ofVec2f & point)
+	{
+		float lengthSquared = point.x * point.x + point.y * point.y;
+
+		float a = 1.0f + lengthSquared * (distortion[0] + distortion[1] * lengthSquared);
+		float b = 2.0f * point.x * point.y;
+
+		ofVec2f result;
+		result.x = a * point.x + b * distortion[2] + distortion[3] * (lengthSquared + 2.0f * point.x * point.y);
+		result.y = a * point.y + distortion[2] * (lengthSquared + 2.0f * point.y * point.y) + b * distortion[3];
+
+		return result;
 	}
 }

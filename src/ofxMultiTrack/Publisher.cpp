@@ -113,6 +113,11 @@ namespace ofxMultiTrack {
 	}
 
 	//----------
+	void PublisherExtColor::setCameraParams(const vector<float> & distortion, const ofMatrix4x4 & view, const ofMatrix4x4 & projection) {
+		this->comboFrame.setCameraParams(distortion, view, projection);
+	}
+
+	//----------
 	shared_ptr<ofxMachineVision::Grabber::Simple> PublisherExtColor::getGrabber() {
 		return this->grabber;
 	}
