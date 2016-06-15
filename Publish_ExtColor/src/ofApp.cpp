@@ -110,8 +110,23 @@ void ofApp::setup() {
 	{
 		auto port = 5000;
 
+		vector<float> distortion;
+		distortion.push_back(0.0940593);
+		distortion.push_back(-0.237928);
+		distortion.push_back(0.00275671);
+		distortion.push_back(-0.000131951);
+		ofMatrix4x4 view = ofMatrix4x4(-0.999797, -0.0118014, -0.0163298, 0,
+			0.0127842, -0.998028, -0.0614491, 0,
+			-0.0155724, -0.0616454, 0.997977, 0,
+			-0.0251298, 0.0330899, 0.119725, 1);
+		ofMatrix4x4 projection = ofMatrix4x4(1.51642, 0, 0, 0,
+			0, -2.69132, 0, 0,
+			0.0231383, 0.0115212, 1.00669, 1,
+			0, 0, -0.100334, 0);
+
 		//initialise the ofxMultiTrack::Publisher
 		this->publisher.init(this->kinect, this->grabber, port);
+		this->publisher.setCameraParams(distortion, view, projection);
 
 		ofSetWindowTitle("Publishing on : " + ofToString(port));
 	}
