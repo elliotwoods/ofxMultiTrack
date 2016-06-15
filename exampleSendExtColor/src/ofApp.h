@@ -2,15 +2,19 @@
 
 #include "ofMain.h"
 
+#include "ofxKinectForWindows2.h"
 #include "ofxMultiTrack.h"
 #include "ofxCvGui.h"
-#include "ofxSpout.h"
-#include "ofxOsc.h"
+
+#include <json/json.h>
 
 class ofApp : public ofBaseApp{
 
 	public:
 		void setup();
+		
+		void setGuiMinimised(bool);
+
 		void update();
 		void draw();
 
@@ -28,30 +32,14 @@ class ofApp : public ofBaseApp{
 		
 		ofxCvGui::Builder gui;
 
-		ofxMultiTrack::Receiver receiver;
+		bool guiMinimised = false;
+		ofxCvGui::Controller * guiController;
+		ofxCvGui::PanelGroupPtr bigGui;
+		ofxCvGui::PanelGroupPtr smallGui;
 
-		struct Texture {
-			ofTexture texture;
-			ofxSpout::Sender sender;
+		shared_ptr<ofxKinectForWindows2::Device> kinect;
+		shared_ptr<ofxMachineVision::Grabber::Simple> grabber;
+		ofxMultiTrack::SenderExtColor sender;
 
-			void send() {
-				this->sender.send(this->texture);
-			}
-		};
-		Texture color;
-		Texture depth;
-		Texture infrared;
-		Texture bodyIndex;
-		Texture colorCoordInDepthFrame;
-
-		ofFloatPixels depthToWorldTable;
-		ofParameter<bool> externalColor{ "External Color", true };
-		ofParameter<bool> previewWorld{ "Preview World", false };
-
-		int clientIndex = 0;
-		bool newFrame = false;
-		
-		ofxOscSender oscSender;
-		int oscPort;
-		string oscHost = "127.0.0.1";
+		bool droppedFrame = false;
 };

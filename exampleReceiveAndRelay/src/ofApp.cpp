@@ -25,6 +25,7 @@ void ofApp::setup() {
 	widgets->addLiveValue<string>("Sending Body OSC to ", [this]() {
 		return this->oscHost + ":" + ofToString(this->oscPort);;
 	});
+	widgets->addToggle(this->externalColor);
 	widgets->addToggle(this->previewWorld);
 	widgets->addButton("Load Depth To World Table", [this]() {
 		ofBuffer loadBuffer;
@@ -138,8 +139,13 @@ void ofApp::update(){
 
 		//load data in cast format
 		{
-			//YUY8 -> RGBA8
-			this->color.texture.loadData((unsigned char *) frame.getColor().getData(), frame.getColor().getWidth() / 2, frame.getColor().getHeight(), GL_RGBA);
+			if (this->externalColor) {
+				this->color.texture.loadData(frame.getColor());
+			}
+			else {
+				//YUY8 -> RGBA8
+				this->color.texture.loadData((unsigned char *)frame.getColor().getData(), frame.getColor().getWidth() / 2, frame.getColor().getHeight(), GL_RGBA);
+			}
 			this->color.send();
 
 			//L16 -> RGBA8
