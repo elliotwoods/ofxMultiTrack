@@ -38,6 +38,25 @@ void ofApp::setup() {
 			this->sender.getSender().setMaxSocketBufferSize(ofToInt(newSizeString));
 		}
 	});
+	widgets->addButton("Save Depth To World Table", [this]() {
+		string filename = "DepthToWorld.raw";
+		{
+			auto result = ofSystemTextBoxDialog("Enter filename [" + filename + "]");
+			if (!result.empty()) {
+				filename = result;
+			}
+
+			ofFloatPixels depthToWorldTable;
+			kinect->getDepthSource()->getDepthToWorldTable(depthToWorldTable);
+			ofxSquashBuddies::Message message;
+			message.setData(depthToWorldTable);
+			const auto & saveString = message.getMessageString();
+			ofBuffer saveBuffer(saveString);
+			if (!ofBufferToFile(ofToDataPath(filename), saveBuffer)) {
+				ofSystemAlertDialog("Error saving table to disk!");
+			}
+		}
+	});
 	widgets->addToggle("Minimise GUI",
 		[this]() {
 		return guiMinimised;

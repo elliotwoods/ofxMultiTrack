@@ -25,6 +25,23 @@ void ofApp::setup() {
 	widgets->addLiveValue<string>("Sending Body OSC to ", [this]() {
 		return this->oscHost + ":" + ofToString(this->oscPort);;
 	});
+	widgets->addToggle(this->previewWorld);
+	widgets->addButton("Load Depth To World Table", [this]() {
+		ofBuffer loadBuffer;
+		{
+			auto result = ofSystemLoadDialog("Select file", false, ofToDataPath(""));
+			if (result.bSuccess) {
+				auto filePath = result.filePath;
+				loadBuffer = ofBufferFromFile(filePath);
+			}
+		}
+
+		if (loadBuffer.size()) {
+			ofxSquashBuddies::Message message;
+			message.pushData(loadBuffer.getData(), loadBuffer.size());
+			message.getData(this->depthToWorldTable);
+		}
+	});
 
 	//initialise receiver
 	{
@@ -54,6 +71,31 @@ void ofApp::setup() {
 			const auto & boneAtlas = ofxKinectForWindows2::Data::Body::getBonesAtlas();
 			for (const auto & body : bodies) {
 				body.drawWorld();
+			}
+
+			if (this->depthToWorldTable.isAllocated()) {
+				// TODO: This can be optimized
+				ofMesh mesh;
+				auto depth = this->receiver.getFrame().getDepth().getData();
+				auto color = this->receiver.getFrame().getColor();
+				auto map = this->receiver.getFrame().getColorCoordInDepthFrame().getData();
+				auto lut = depthToWorldTable.getData();
+
+				for (int i = 0; i < depthToWorldTable.size(); ++i) {
+					ofVec3f v = ofVec3f(lut[i * 2 + 0], lut[i * 2 + 1], 1.0) * depth[i] * 0.001f;
+					mesh.addVertex(v);
+
+					auto colorX = map[i * 2 + 0];
+					auto colorY = map[i * 2 + 1];
+
+					if (colorX >= 0 && colorX < color.getWidth() && colorY >= 0 && colorY < color.getHeight()) {
+						mesh.addColor(color.getColor(colorX, colorY));
+					}
+					else {
+						mesh.addColor(ofColor::red);
+					}
+				}
+				mesh.draw(OF_MESH_POINTS);
 			}
 		};
 	}
