@@ -8,16 +8,16 @@
 namespace ofxMultiTrack {
 	class Sender {
 	public:
-		void init(ofxKinectForWindows2::Device &, string ipAddress, int port);
+		void init(shared_ptr<ofxKinectForWindows2::Device>, string ipAddress, int port);
 		bool update(); // return false if dropped a frame
 
-		ofxKinectForWindows2::Device & getKinect();
+		shared_ptr<ofxKinectForWindows2::Device> getKinect();
 		ofxSquashBuddies::Sender & getSender();
 
 		float getDeviceFrameRate() const;
 
 	protected:
-		ofxKinectForWindows2::Device * kinect = nullptr;
+		shared_ptr<ofxKinectForWindows2::Device> kinect;
 
 		ofxSquashBuddies::Sender sender;
 		DeviceFrame deviceFrame;

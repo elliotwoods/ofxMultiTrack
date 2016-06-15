@@ -4,11 +4,11 @@ using namespace ofxSquashBuddies;
 
 namespace ofxMultiTrack {
 	//----------
-	void Sender::init(ofxKinectForWindows2::Device & kinect, string ipAddress, int port) {
-		this->kinect = & kinect;
+	void Sender::init(shared_ptr<ofxKinectForWindows2::Device> kinect, string ipAddress, int port) {
+		this->kinect = kinect;
 
 		this->sender.init(ipAddress, port);
-		this->deviceFrame.init(* this->kinect);
+		this->deviceFrame.init(this->kinect);
 	}
 
 	//----------
@@ -35,8 +35,8 @@ namespace ofxMultiTrack {
 	}
 
 	//----------
-	ofxKinectForWindows2::Device & Sender::getKinect() {
-		return * this->kinect;
+	shared_ptr<ofxKinectForWindows2::Device> Sender::getKinect() {
+		return this->kinect;
 	}
 
 	//----------

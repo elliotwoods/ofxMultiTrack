@@ -37,7 +37,7 @@ class ofApp : public ofBaseApp{
 		ofxCvGui::PanelGroupPtr bigGui;
 		ofxCvGui::PanelGroupPtr smallGui;
 
-		ofxKinectForWindows2::Device kinect;
+		shared_ptr<ofxKinectForWindows2::Device> kinect;
 		ofxMultiTrack::Sender sender;
 
 		bool droppedFrame = false;
