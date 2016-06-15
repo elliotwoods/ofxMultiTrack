@@ -27,9 +27,9 @@ ipch/
 *.pdb
 *.idb
 *.pch
+*.opendb
 Debug/
 Release/
-
 
 *~.xml
 
