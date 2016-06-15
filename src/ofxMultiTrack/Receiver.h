@@ -1,5 +1,3 @@
-#ifdef OFXMULTITRACK_UDP
-
 #pragma once
 
 #include "Frame.h"
@@ -24,5 +22,3 @@ namespace ofxMultiTrack {
 		bool newFrame = false;
 	};
 }
-
-#endif // OFXMULTITRACK_UDP
