@@ -18,6 +18,12 @@
     <ClInclude Include="..\src\ofxMultiTrack\Constants.h">
       <Filter>src\ofxMultiTrack</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\ofxMultiTrack\Receiver.h">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxMultiTrack\Sender.h">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\ofxMultiTrack\Publisher.h">
       <Filter>src\ofxMultiTrack</Filter>
     </ClInclude>
@@ -27,6 +33,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\ofxMultiTrack\Frame.cpp">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxMultiTrack\Receiver.cpp">
+      <Filter>src\ofxMultiTrack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxMultiTrack\Sender.cpp">
       <Filter>src\ofxMultiTrack</Filter>
     </ClCompile>
     <ClCompile Include="..\src\ofxMultiTrack\Publisher.cpp">
